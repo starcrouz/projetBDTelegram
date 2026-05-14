@@ -1,0 +1,20 @@
+# Environnement virtuel
+venv/
+
+# Fichiers sensibles
+config.json
+*.session
+*.session-journal
+
+# Logs
+download_log.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/

@@ -1,0 +1,29 @@
+{
+  "mark_read": false,
+  "scan_boundary": {
+    "-1001774120183": 173980,
+    "-1001477882596": 53983
+  },
+  "files": [
+    {
+      "channel": -1001774120183,
+      "message_id": 173774,
+      "filename": "Les_cieux_noirs_Alain_Bujak_Andrès_Abiuso_Futuropolis_08_2025@9.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173782,
+      "filename": "Miles_Davis_et_la_Quête_du_Son_O_S_Dave_Chrisholm_Glénat_04_2025@9.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173786,
+      "filename": "Origines_McLeod_Chapman_Rebelka_404_éditions_04_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173788,
+      "filename": "Possessions - Alexis Bacci (Glénat 04.2025)@9-art-BD.cbr"
+    }
+  ]
+}
