@@ -158,6 +158,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
   <div class="pills">
      
 <!-- Pagination button -->
+
+     <button class="btn" style="background:#f59e0b; color:white; border:none;" onclick="loadPileALire()">📚 Ma pile à lire</button>
+
 <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner</button>
 <button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true)">⏩ Scanner BDs suivantes</button>
 
@@ -278,6 +281,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
 <script>
     const DATA = [];
+    let toReadList = new Set();
+    fetch('/api/list_to_read').then(r=>r.json()).then(items => {
+        if(items) items.forEach(i => toReadList.add(i.filename));
+    });
     const grid = document.getElementById('grid');
     const statusDiv = document.getElementById('scan-status');
     const btnScan = document.getElementById('btn-scan');
@@ -509,6 +516,75 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') { closeModal('settings-modal'); closeModal('search-modal'); } });
 
     /* Scanner Dynamique */
+    
+    
+    function addToRead(msg_id, status, filename, channel) {
+        if (status === 'INCERTAIN') return;
+        
+        const btn = document.getElementById('btn-read-' + msg_id);
+        
+        if (status === 'DOUBLON') {
+            const item = DATA.find(d => d.message_id === msg_id);
+            if (item && item.everything_results && item.everything_results.length > 0) {
+                const localPath = item.everything_results[0].path;
+                const localName = item.everything_results[0].filename;
+                const fullLocalPath = localPath.endsWith("\\") ? localPath + localName : localPath + "\\" + localName;
+                
+                if(btn) { btn.style.background = '#f59e0b'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
+                toReadList.add(filename);
+                
+                fetch('/api/add_to_read_local', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        local_path: fullLocalPath,
+                        message_id: msg_id,
+                        filename: filename
+                    })
+                });
+            }
+        } else {
+            if(btn) { btn.style.background = '#f59e0b'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
+            toReadList.add(filename);
+            addDownloadTask(msg_id, channel, filename, true);
+        }
+    }
+    function loadPileALire() {
+        grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Chargement de la pile à lire...</h2>";
+        document.getElementById('no-results').style.display = 'none';
+        
+        fetch('/api/list_to_read')
+        .then(r=>r.json())
+        .then(items => {
+            if (!items || items.length === 0) {
+                grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>";
+                return;
+            }
+            
+            grid.innerHTML = items.map(d => {
+                const cleanName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
+                const imgH = `<img class="cover" src="${d.thumb_url}?t=${Date.now()}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
+                
+                return `<div class="card" style="cursor:default;">
+                  ${imgH}
+                  <button onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" style="position:absolute; top:7px; right:7px; background:#ef4444; color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:10;" title="Marquer comme lu (Supprimer)">✖️</button>
+                  <div class="card-info" style="margin-top:auto;">
+                    <div class="card-title">${cleanName}</div>
+                  </div>
+                </div>`;
+            }).join('');
+        });
+    }
+    
+    function removeFromRead(filename) {
+        if(!confirm("Supprimer cette BD de la pile à lire ?")) return;
+        fetch('/api/remove_to_read', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({filename: filename})
+        }).then(() => loadPileALire());
+    }
+
     function startDynamicScan(continueFromLast = false) {
         grid.innerHTML = "";
         DATA.length = 0;
@@ -598,6 +674,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         return `<div class="card${isSel?' selected':''}" data-id="${d.message_id}" data-status="${d.status}" onclick="toggleCard(this)">
           ${imgH}
           ${bdtH}
+          
+          ${d.status !== 'INCERTAIN' ? `<button class="btn-read" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="Ajouter à la pile à lire" style="position:absolute; bottom:30px; right:7px; background:${toReadList.has(d.filename) ? '#f59e0b' : '#10b981'}; color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:10; transition:background 0.3s;">📖</button>` : `<button class="btn-read" id="btn-read-${d.message_id}" style="display:none; position:absolute; bottom:30px; right:7px; background:#10b981; color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:12px; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:10; transition:background 0.3s;" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})">📖</button>`}
+
+
           <div class="card-info">
             <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()">${displayName}</div>
             <div class="card-meta">${d.channel_name}<br>${d.date} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
@@ -743,18 +823,30 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         btn.innerText = "Chercher";
     }
     
+    
     function selectManualResult(result) {
+        const item = DATA.find(d => d.message_id === currentModalMsgId);
+        if (item) {
+            item.status = 'DOUBLON';
+            item.everything_results = [result];
+        }
         const card = document.querySelector(`.card[data-id="${currentModalMsgId}"]`);
         if(card) {
+            card.dataset.status = 'DOUBLON';
             const badge = card.querySelector('.badge');
             if(badge) {
                 badge.className = 'badge DOUBLON';
                 badge.innerText = 'DOUBLON (Manuel)';
             }
+            const btn = document.getElementById('btn-read-' + currentModalMsgId);
+            if(btn) {
+                btn.style.display = 'flex';
+                // Update onclick params
+                btn.onclick = (e) => { e.stopPropagation(); addToRead(currentModalMsgId, 'DOUBLON', item.filename, item.channel); };
+            }
         }
         closeModal('search-modal');
     }
-    
     function resetManualResult() {
         const card = document.querySelector(`.card[data-id="${currentModalMsgId}"]`);
         if(card) {
@@ -1049,6 +1141,81 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None):
         await websocket.send_json({"type": "error", "message": str(e)})
         await websocket.close()
 
+
+import shutil
+
+@app.post("/api/add_to_read_local")
+async def add_to_read_local(request: Request):
+    data = await request.json()
+    local_path = data.get("local_path")
+    message_id = data.get("message_id")
+    filename = data.get("filename")
+    
+    if not local_path or not os.path.exists(local_path):
+        return {"status": "error", "message": "Fichier local introuvable."}
+        
+    alire_dir = os.path.join(PROJECT_DIR, "A_lire_yacreader")
+    os.makedirs(alire_dir, exist_ok=True)
+    
+    # Copier la BD
+    dest_path = os.path.join(alire_dir, filename)
+    try:
+        shutil.copy2(local_path, dest_path)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+        
+    # Copier la miniature
+    thumb_src = os.path.join(PROJECT_DIR, "thumbs", f"{message_id}.jpg")
+    name_no_ext = os.path.splitext(filename)[0]
+    thumb_dest = os.path.join(alire_dir, f"{name_no_ext}.jpg")
+    
+    if os.path.exists(thumb_src):
+        try:
+            shutil.copy2(thumb_src, thumb_dest)
+        except:
+            pass
+            
+    return {"status": "ok"}
+
+@app.get("/api/list_to_read")
+async def list_to_read():
+    alire_dir = os.path.join(PROJECT_DIR, "A_lire_yacreader")
+    if not os.path.exists(alire_dir):
+        return []
+        
+    files = []
+    for f in os.listdir(alire_dir):
+        if f.lower().endswith(('.cbz', '.cbr', '.pdf', '.epub', '.rar', '.zip')):
+            name_no_ext = os.path.splitext(f)[0]
+            thumb_url = ""
+            if os.path.exists(os.path.join(alire_dir, f"{name_no_ext}.jpg")):
+                thumb_url = f"/alire/{name_no_ext}.jpg"
+            files.append({
+                "filename": f,
+                "thumb_url": thumb_url
+            })
+    return files
+
+@app.post("/api/remove_to_read")
+async def remove_to_read(request: Request):
+    data = await request.json()
+    filename = data.get("filename")
+    if not filename: return {"status": "error"}
+    
+    alire_dir = os.path.join(PROJECT_DIR, "A_lire_yacreader")
+    file_path = os.path.join(alire_dir, filename)
+    name_no_ext = os.path.splitext(filename)[0]
+    thumb_path = os.path.join(alire_dir, f"{name_no_ext}.jpg")
+    
+    if os.path.exists(file_path):
+        try: os.remove(file_path)
+        except: pass
+    if os.path.exists(thumb_path):
+        try: os.remove(thumb_path)
+        except: pass
+        
+    return {"status": "ok"}
+
 download_semaphore = None
 active_download_tasks = {}
 
@@ -1140,6 +1307,9 @@ async def downloads_ws(websocket: WebSocket):
 
 # Sert le dossier thumbs pour la galerie
 app.mount("/thumbs", StaticFiles(directory=os.path.join(PROJECT_DIR, "thumbs")), name="thumbs")
+os.makedirs(os.path.join(PROJECT_DIR, "A_lire_yacreader"), exist_ok=True)
+app.mount("/alire", StaticFiles(directory=os.path.join(PROJECT_DIR, "A_lire_yacreader")), name="alire")
+
 
 if __name__ == "__main__":
     import uvicorn
