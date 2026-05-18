@@ -175,7 +175,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Bibliothèque Locale</h3>
           <div style="display:flex; gap:10px;">
-              <button class="btn" style="background:#f59e0b; color:white; border:none;" onclick="loadPileALire()">📚 Ma pile à lire</button>
+              <button class="btn" id="btn-pile" style="background:#f59e0b; color:white; border:none;" onclick="togglePileALire()">📚 Ma pile à lire</button>
               <input type="text" id="local-search" placeholder="Recherche (Everywhere)..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px;" onkeydown="if(event.key==='Enter') executeLocalSearch()">
               <button class="btn btn-primary" onclick="executeLocalSearch()" style="padding:6px 10px;">🔍</button>
           </div>
@@ -622,37 +622,53 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             addDownloadTask(msg_id, channel, filename, true);
         }
     }
-    function loadPileALire() {
-        document.getElementById('grid').style.display = 'none';
-        document.getElementById('scan-controls').style.display = 'none';
-        const pGrid = document.getElementById('pile-grid');
-        pGrid.style.display = 'grid';
-        pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Chargement de la pile à lire...</h2>";
-        document.getElementById('no-results').style.display = 'none';
-        
-        fetch('/api/list_to_read')
-        .then(r=>r.json())
-        .then(items => {
-            if (!items || items.length === 0) {
-                pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>";
-                return;
-            }
+
+    let isViewingPile = false;
+    
+    function togglePileALire() {
+        if (isViewingPile) {
+            document.getElementById('pile-grid').style.display = 'none';
+            document.getElementById('grid').style.display = 'grid';
+            document.getElementById('scan-controls').style.display = 'flex';
+            document.getElementById('btn-pile').innerHTML = "📚 Ma pile à lire";
+            document.getElementById('btn-pile').style.background = "#f59e0b";
+            isViewingPile = false;
+        } else {
+            document.getElementById('grid').style.display = 'none';
+            document.getElementById('scan-controls').style.display = 'none';
+            const pGrid = document.getElementById('pile-grid');
+            pGrid.style.display = 'grid';
+            document.getElementById('btn-pile').innerHTML = "🔙 Retour au Scan";
+            document.getElementById('btn-pile').style.background = "#64748b";
+            isViewingPile = true;
             
-            pGrid.innerHTML = items.map(d => {
-                const cleanName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
-                const imgH = `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
-                const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
-                const ext = extMatch ? extMatch[1].toUpperCase() : '';
+            pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Chargement de la pile à lire...</h2>";
+            document.getElementById('no-results').style.display = 'none';
+            
+            fetch('/api/list_to_read')
+            .then(r=>r.json())
+            .then(items => {
+                if (!items || items.length === 0) {
+                    pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>";
+                    return;
+                }
                 
-                return `<div class="card" style="cursor:default;">
-                  ${imgH}
-                  <div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" title="Retirer de la pile à lire">📌</div>
-                  <div class="card-info" style="margin-top:auto;">
-                    <div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
-                  </div>
-                </div>`;
-            }).join('');
-        });
+                pGrid.innerHTML = items.map(d => {
+                    const cleanName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
+                    const imgH = `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
+                    const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
+                    const ext = extMatch ? extMatch[1].toUpperCase() : '';
+                    
+                    return `<div class="card" style="cursor:default;">
+                      ${imgH}
+                      <div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" title="Retirer de la pile à lire">📌</div>
+                      <div class="card-info" style="margin-top:auto;">
+                        <div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
+                      </div>
+                    </div>`;
+                }).join('');
+            });
+        }
     }
     
     function removeFromRead(filename) {
@@ -661,7 +677,49 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({filename: filename})
-        }).then(() => loadPileALire());
+        }).then(() => {
+            isViewingPile = false;
+            togglePileALire();
+        });
+    }
+
+    async function executeLocalSearch() {
+        const query = document.getElementById('local-search').value.trim();
+        if(!query) return;
+        
+        document.getElementById('pile-grid').style.display = 'none';
+        document.getElementById('grid').style.display = 'grid';
+        document.getElementById('scan-controls').style.display = 'none';
+        document.getElementById('btn-pile').innerHTML = "📚 Ma pile à lire";
+        document.getElementById('btn-pile').style.background = "#f59e0b";
+        isViewingPile = false;
+        
+        grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Recherche locale en cours...</h2>";
+        
+        try {
+            const res = await fetch(`/api/everything?q=${encodeURIComponent(query)}&original=`);
+            const results = await res.json();
+            
+            if (results.length === 0) {
+                grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Aucun résultat local trouvé.</h2>";
+                return;
+            }
+            
+            grid.innerHTML = '<h2 style="grid-column: 1 / -1; color: white; font-size: 1.1rem; margin-bottom: 10px;">Résultats Everything (' + results.length + ') :</h2>' + results.map(r => {
+                const extMatch = r.filename.match(/\.([a-z0-9]+)$/i);
+                const ext = extMatch ? extMatch[1].toUpperCase() : '';
+                return `<div class="card" style="cursor:default; height: auto;">
+                  <div class="cover" style="display:flex;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a; aspect-ratio:3/4;">${r.filename[0].toUpperCase()}</div>
+                  <div class="card-info" style="margin-top:auto;">
+                    <div class="card-title">${r.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'')} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
+                    <div class="card-meta" style="word-break: break-all; font-size: 10px;">${r.path}</div>
+                  </div>
+                </div>`;
+            }).join('');
+            
+        } catch(e) {
+            grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: #ef4444;'>Erreur lors de la recherche Everything.</h2>";
+        }
     }
 
     function startTgSearch() {
@@ -687,6 +745,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         document.getElementById('btn-scan-next').style.display = 'none'; document.getElementById('btn-search-next').style.display = 'none';
         
         if (continueFromLast && lastScanDate) {
+            document.getElementById('current-date-pill').style.display = 'block';
             document.getElementById('current-date-pill').innerHTML = `<b>${lastScanDate.substring(0, 10)}</b>`;
         }
         
@@ -1162,7 +1221,7 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
             
             skipped_so_far = 0
             if search_query:
-                kwargs = {'search': search_query, 'limit': 100}
+                kwargs = {'search': search_query, 'limit': None}
             else:
                 kwargs = {'reverse': True}
                 if continue_date:
