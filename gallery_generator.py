@@ -107,6 +107,7 @@ async def download_all_covers(client, candidates, concurrency=5):
     return thumb_map
 
 
+
 def generate_gallery_html(candidates, doublons_list, thumb_map,
                            output_path, project_dir, scan_boundary=None):
     """
@@ -159,11 +160,13 @@ def generate_gallery_html(candidates, doublons_list, thumb_map,
     extract_title_js = (
         "function extractTitle(filename) {\n"
         "  let n = filename.replace(/\\.(cbz|cbr|pdf)$/i,'').replace(/_/g,' ');\n"
-        "  n = n.replace(/\\s*(T\\d+|Tome\\s*\\d+|\\bOS\\b|\\bHS\\b|\\bO\\.?S\\.?\\b|\\(|\\s-\\s|\\d{4}).*$/i,'');\n"
+        "  n = n.replace(/\\s*(T\\d+|Tome\\s*\\d+|\\bOS\\b|\\bHS\\b|\\bO\\s+S\\b|\\bO\\.?S\\.?\\b|\\(|\\s-\\s|\\d{4}).*$/i,'');\n"
         "  return n.trim();\n"
         "}\n"
         "function bdtUrl(filename) {\n"
         "  var title = extractTitle(filename);\n"
+        "  if (!title || title.length < 2) return null;\n"
+        "  if (title.trim().split(/\\s+/).length > 5) return null;\n"
         "  return 'https://www.google.com/search?q=site%3Abedetheque.com+' + encodeURIComponent(title) + '&btnI=1';\n"
         "}"
     )
@@ -387,12 +390,12 @@ function renderGrid(items) {{
         +`<div class="placeholder" style="display:none;background:linear-gradient(135deg,${{color}}44,#0f172a)">${{d.filename[0].toUpperCase()}}</div>`
       : `<div class="placeholder" style="background:linear-gradient(135deg,${{color}}44,#0f172a)">${{d.filename[0].toUpperCase()}}</div>`;
     const matchH = d.top_match ? `<div class="match-hint">${{d.top_score}}% — ${{d.top_match}}</div>` : '';
+    const bdtH = (u => u ? `<a class=\"bdt-link\" href=\"${{u}}\" target=\"_blank\" onclick=\"event.stopPropagation()\" title=\"Rechercher sur BDth\u00e8que\">📚</a>` : '')(bdtUrl(d.filename));
     return `<div class="card${{isSel?' selected':''}}" data-id="${{d.message_id}}"
         data-rec="${{d.recommendation}}" data-name="${{d.filename.toLowerCase()}}"
         onclick="toggleCard(this)" data-entry="${{entry}}">
       ${{imgH}}
-      <a class="bdt-link" href="${{bdtUrl(d.filename)}}" target="_blank"
-         onclick="event.stopPropagation()" title="Rechercher sur BDthèque">📚</a>
+      ${{bdtH}}
       <div class="card-info">
         <div class="card-title" data-fn="${{d.filename}}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()">${{displayName}}</div>
         <div class="card-meta">${{d.channel_name}}<br>${{d.date}} · ${{d.size_mb}} Mo</div>

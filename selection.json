@@ -1,20 +1,10 @@
 {
-  "mark_read": false,
+  "mark_read": true,
   "scan_boundary": {
     "-1001774120183": 173980,
-    "-1001477882596": 53983
+    "-1001477882596": 53990
   },
   "files": [
-    {
-      "channel": -1001774120183,
-      "message_id": 173774,
-      "filename": "Les_cieux_noirs_Alain_Bujak_Andrès_Abiuso_Futuropolis_08_2025@9.cbr"
-    },
-    {
-      "channel": -1001774120183,
-      "message_id": 173782,
-      "filename": "Miles_Davis_et_la_Quête_du_Son_O_S_Dave_Chrisholm_Glénat_04_2025@9.cbr"
-    },
     {
       "channel": -1001774120183,
       "message_id": 173786,
@@ -24,6 +14,76 @@
       "channel": -1001774120183,
       "message_id": 173788,
       "filename": "Possessions - Alexis Bacci (Glénat 04.2025)@9-art-BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173808,
+      "filename": "Cyborgs_T02_Steel_Istin_Pinta_Soleil_productions_06_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173812,
+      "filename": "Gen War -Level 3- (MoCDM) -(Audie 05.2025)@9-art-BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173818,
+      "filename": "Le_pays_de_l'eau_qui_monte_Rodolphe_Le_Sourd_Delcourt_01_2026@9.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173840,
+      "filename": "Amour toxique (Schmauch & Moret) (2025)@9-art-BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173844,
+      "filename": "Ancolie - OS - (Salomé Lahoche) (2025)@9-art-BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173854,
+      "filename": "Cargo_Pavillon_barbare_Costès_&_Belin_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173862,
+      "filename": "Dernière_Maison_juste_avant_la_Forêt_OS_Djian_Loisel_2025@9_art.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173888,
+      "filename": "Gotlib et la musique (Arnaud Le Gouëfflec) (2025)@9-art-BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173912,
+      "filename": "Meilleur_ami_du_chien_Le_Lhote_&_Guerse_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173922,
+      "filename": "Pays_de_l'eau_qui_monte_Le_OS_Rodolphe_&_Le_Sourd_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173942,
+      "filename": "Sous_les_eaux_de_Chaboillez_Étienne_Prud'homme_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001774120183,
+      "message_id": 173972,
+      "filename": "Vincent_avant_Van_Gogh_OS_Salma_&_Navarro_2025@9_art_BD.cbr"
+    },
+    {
+      "channel": -1001477882596,
+      "message_id": 53942,
+      "filename": "Un Père - OS - (2025)@BD_fr.cbz"
+    },
+    {
+      "channel": -1001477882596,
+      "message_id": 53945,
+      "filename": "Soli Deo Gloria - OS - (2025)@BD_fr.cbz"
     }
   ]
 }

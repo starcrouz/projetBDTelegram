@@ -1,15 +1,21 @@
-# Environnement virtuel
+# ── Environnement virtuel ──────────────────────────────────────────────────────
 venv/
+.venv/
 
-# Fichiers sensibles
+# ── Fichiers sensibles (credentials Telegram) ─────────────────────────────────
 config.json
 *.session
 *.session-journal
 
-# Logs
+# ── Fichiers générés / temporaires ────────────────────────────────────────────
 download_log.txt
+gallery.html
+review_*.html
+thumbs/
+selection.json
+selection_done_*.json
 
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -18,3 +24,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# ── Divers ────────────────────────────────────────────────────────────────────
+_fix_*.py
+.DS_Store
+Thumbs.db
