@@ -106,8 +106,8 @@ def search_by_keywords(filename, search_paths=None, api_url="http://localhost:80
     keyword_str = " ".join(keywords)
 
     if search_paths:
-        path_parts = " | ".join(f'path:"{p}"' for p in search_paths)
-        query = f"( {path_parts} ) {keyword_str} {ext_filter}"
+        path_parts = " | ".join(f'<"{p}">' for p in search_paths)
+        query = f"<{path_parts}> {keyword_str} {ext_filter}"
     else:
         query = f"{keyword_str} {ext_filter}"
 

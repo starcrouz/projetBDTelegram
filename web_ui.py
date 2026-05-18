@@ -156,8 +156,14 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 <header>
   <h1>📚 BD Telegram</h1>
   <div class="pills">
-     <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner</button>
+     
+<!-- Pagination button -->
+<button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner</button>
+<button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true)">⏩ Scanner BDs suivantes</button>
+
      <button class="btn" onclick="document.getElementById('settings-modal').style.display='flex'">⚙️ Config</button>
+     <div class="pill blue" id="current-date-pill" style="align-self:center; cursor:pointer;" onclick="document.getElementById('settings-modal').style.display='flex'"><b>Auto</b></div>
+     <div class="pill yellow" id="global-dl-indicator" style="display:none; align-self:center;"></div>
      <span id="scan-status" style="margin-left: 10px; align-self: center; font-size: 0.8rem; color: #38bdf8;">Prêt.</span>
   </div>
   <div class="filters">
@@ -174,7 +180,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     <button class="btn" onclick="selectAllVisible()">Tout cocher</button>
     <button class="btn" onclick="deselectAll()">Décocher</button>
     <span id="counter">0 visible / 0 sélec.</span>
-    <button id="export-btn" class="btn-download" disabled onclick="downloadSelection()">⬇️ Télécharger (0)</button>
+    <button id="export-btn" class="btn-download" disabled onclick="downloadSelection(false)">⬇️ Télécharger (0)</button>
   </div>
 </header>
 
@@ -194,6 +200,16 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             <input type="date" id="start_date" onchange="updateConfig()">
             <div class="help-text">Laissez vide pour le curseur automatique.</div>
         </div>
+        <div class="form-label">Channels Telegram :</div>
+        <div>
+            <input type="text" id="channels" onchange="updateConfig()" placeholder="ex: -1001774120183, -1001477882596">
+            <div class="help-text">ID de canaux séparés par des virgules.</div>
+        </div>
+        <div class="form-label">Dossiers BD Locaux :</div>
+        <div>
+            <input type="text" id="bd_search_paths" onchange="updateConfig()" placeholder="ex: F:\BD, F:\Téléchargements">
+            <div class="help-text">Dossiers pour Everything séparés par des virgules.</div>
+        </div>
         <div class="form-label">Mots-clés (Filtre) :</div>
         <div>
             <input type="text" id="filename_filter" onchange="updateConfig()" placeholder="ex: 2025, 2026, Casterman">
@@ -204,9 +220,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             <input type="number" id="download_concurrency" onchange="updateConfig()" min="1" max="20">
             <div class="help-text">Fichiers téléchargés en simultané.</div>
         </div>
-        <div class="form-label">Limite Scan (Max) :</div>
+        <div class="form-label">Limite d'affichage (Max) :</div>
         <div>
-            <input type="number" id="max_downloads_per_run" onchange="updateConfig()">
+            <input type="number" id="max_gallery_size" onchange="updateConfig()">
             <div class="help-text">Nombre max de BD affichées.</div>
         </div>
         <div class="form-label">Seuil Doublon :</div>
@@ -231,8 +247,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             <button class="modal-close" onclick="closeModal('search-modal')">&times;</button>
         </div>
         <div style="display:flex; gap:10px;">
-            <input type="text" id="modal-query" style="flex-grow:1; font-size:14px;" placeholder="Titre de la BD...">
+            <input type="text" id="modal-query" style="flex-grow:1; font-size:14px;" placeholder="Titre de la BD..." onkeydown="if(event.key==='Enter') executeModalSearch()">
             <button class="btn btn-primary" id="modal-search-btn" onclick="executeModalSearch()">Chercher</button>
+            <button class="btn" style="background:#ef4444; color:white; border:none;" onclick="resetManualResult()">Annuler</button>
         </div>
         <div id="modal-results">
             <div class="help-text">Entrez un titre pour chercher.</div>
@@ -240,7 +257,24 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     </div>
 </div>
 
+
+<!-- Modal Downloads -->
+<div class="modal-overlay" id="downloads-modal" onclick="closeModal('downloads-modal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-hdr">
+            <h2>⏳ Téléchargements en cours <span id="dl-speed" style="font-size:0.8rem; color:#94a3b8; font-weight:normal;"></span></h2>
+            <div>
+                <button class="btn" style="background:#ef4444; color:white; border:none;" onclick="cancelAllDownloads()">Tout Annuler</button>
+                <button class="modal-close" onclick="closeModal('downloads-modal')">&times;</button>
+            </div>
+        </div>
+        <div id="downloads-list" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+            <div class="help-text">Aucun téléchargement en cours.</div>
+        </div>
+    </div>
+</div>
 <div id="tooltip"></div>
+
 
 <script>
     const DATA = [];
@@ -250,22 +284,141 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     let dlSocket = null;
     let currentFilter = 'ALL';
     let selected = new Set();
-    
-    let currentModalMsgId = null;
-    let currentModalOriginal = null;
 
-    // Connecter WebSocket Download
+    let activeDownloadsCount = 0;
+    let downloadsState = {};
+    let lastScanDate = null;
+    let lastTotalBytes = 0;
+    
+    // Add onclick to indicator
+    document.getElementById('global-dl-indicator').onclick = function() {
+        renderDownloadsModal();
+        document.getElementById('downloads-modal').style.display='flex';
+    };
+    
+    // Speed tracking
+    setInterval(() => {
+        let currentTotalBytes = 0;
+        let isDownloading = false;
+        Object.values(downloadsState).forEach(d => {
+            if (d.status === 'Préparation...' || d.status === 'En cours') isDownloading = true; // Wait, we don't set "En cours"
+            if (d.current) {
+                currentTotalBytes += d.current;
+                if(d.status !== "Terminé ✅" && d.status !== "Annulé ❌" && !d.status.startsWith("Erreur")) isDownloading = true;
+            }
+        });
+        
+        const speedSpan = document.getElementById('dl-speed');
+        if (isDownloading && lastTotalBytes > 0 && currentTotalBytes >= lastTotalBytes) {
+            const bytesPerSec = currentTotalBytes - lastTotalBytes;
+            if (bytesPerSec > 1024 * 1024) {
+                speedSpan.innerText = `(${(bytesPerSec / 1024 / 1024).toFixed(1)} Mo/s)`;
+            } else if (bytesPerSec > 1024) {
+                speedSpan.innerText = `(${(bytesPerSec / 1024).toFixed(0)} Ko/s)`;
+            } else {
+                speedSpan.innerText = `(${bytesPerSec} o/s)`;
+            }
+        } else {
+            speedSpan.innerText = '';
+        }
+        lastTotalBytes = currentTotalBytes;
+    }, 1000);
+
+    function renderDownloadsModal() {
+        const list = document.getElementById('downloads-list');
+        list.innerHTML = '';
+        const keys = Object.keys(downloadsState);
+        if(keys.length === 0) {
+            list.innerHTML = '<div class="help-text">Aucun téléchargement.</div>';
+            return;
+        }
+        keys.forEach(id => {
+            const d = downloadsState[id];
+            const div = document.createElement('div');
+            div.style.cssText = 'background:#0f172a; padding:10px; border-radius:6px; border:1px solid #334155; font-size:12px; display:flex; justify-content:space-between; align-items:center;';
+            
+            const info = document.createElement('div');
+            info.style.flexGrow = '1';
+            let progText = '';
+            let progWidth = '0%';
+            if(d.total) {
+                progText = `${(d.current/1024/1024).toFixed(1)} / ${(d.total/1024/1024).toFixed(1)} Mo`;
+                progWidth = `${(d.current/d.total)*100}%`;
+            }
+            
+            info.innerHTML = `
+                <div style="font-weight:bold; margin-bottom:4px; color:#e2e8f0;">${d.filename}</div>
+                <div style="color:#94a3b8; font-size:11px;">Statut : <span style="color:#38bdf8">${d.status}</span> ${progText}</div>
+                <div style="width:100%; background:#1e293b; height:4px; border-radius:2px; margin-top:4px;">
+                    <div style="width:${progWidth}; background:#38bdf8; height:100%; border-radius:2px; transition:width 0.2s;"></div>
+                </div>
+            `;
+            
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'background:#ef4444; color:white; border:none; margin-left:15px; padding:4px 8px; cursor:pointer;';
+            btn.innerText = '✕';
+            btn.onclick = () => cancelDownload(id);
+            
+            if(d.status === 'Terminé ✅' || d.status.startsWith('Erreur') || d.status.startsWith('Annulé')) {
+                btn.style.display = 'none';
+            }
+            
+            div.appendChild(info);
+            div.appendChild(btn);
+            list.appendChild(div);
+        });
+    }
+
+    function cancelDownload(id) {
+        if(dlSocket && dlSocket.readyState === WebSocket.OPEN) {
+            dlSocket.send(JSON.stringify({action: "cancel", message_id: parseInt(id)}));
+        }
+    }
+    
+    function cancelAllDownloads() {
+        Object.keys(downloadsState).forEach(id => {
+            if(!downloadsState[id].status.includes('✅') && !downloadsState[id].status.includes('❌')) {
+                cancelDownload(id);
+            }
+        });
+    }
+
+    // Connecter WebSocket Download (Update)
     function initDownloadSocket() {
         dlSocket = new WebSocket(`ws://${window.location.host}/api/downloads_ws`);
         dlSocket.onmessage = function(event) {
             const msg = JSON.parse(event.data);
+            if(!downloadsState[msg.message_id]) downloadsState[msg.message_id] = {filename: msg.filename || 'Fichier inconnu', status: 'En file d\'attente', current:0, total:0};
+            
             if (msg.type === "status") {
+                downloadsState[msg.message_id].status = msg.status;
+                if (msg.filename) downloadsState[msg.message_id].filename = msg.filename;
+                
+                if (msg.status === "Terminé ✅" || msg.status.startsWith("Erreur") || msg.status.startsWith("Annulé")) {
+                    activeDownloadsCount--;
+                    if(activeDownloadsCount < 0) activeDownloadsCount = 0;
+                    updateGlobalDownloadIndicator();
+                    // Clean up state after 10 seconds if done to prevent memory leak
+                    setTimeout(() => { delete downloadsState[msg.message_id]; if(document.getElementById('downloads-modal').style.display === 'flex') renderDownloadsModal(); }, 10000);
+                    
+                    // Hide progress bar on the card
+                    const container = document.getElementById(`dl-container-${msg.message_id}`);
+                    if (container) {
+                        setTimeout(() => { container.style.display = 'none'; }, 2000); // Hide after 2s
+                    }
+                }
                 const statusEl = document.getElementById(`dl-status-${msg.message_id}`);
                 if (statusEl) {
                     statusEl.innerText = msg.status;
                     statusEl.style.display = 'block';
                 }
+                if(document.getElementById('downloads-modal').style.display === 'flex') renderDownloadsModal();
+                
             } else if (msg.type === "progress") {
+                downloadsState[msg.message_id].current = msg.current;
+                downloadsState[msg.message_id].total = msg.total;
+                
                 const bar = document.getElementById(`dl-progress-${msg.message_id}`);
                 const container = document.getElementById(`dl-container-${msg.message_id}`);
                 const statusEl = document.getElementById(`dl-status-${msg.message_id}`);
@@ -278,18 +431,27 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                         statusEl.style.display = 'block';
                     }
                 }
+                if(document.getElementById('downloads-modal').style.display === 'flex') renderDownloadsModal();
             }
         };
         dlSocket.onclose = () => setTimeout(initDownloadSocket, 2000);
     }
+
     initDownloadSocket();
 
     // Config initialisation
     fetch('/api/config').then(r=>r.json()).then(c => {
-        if(c.start_date) document.getElementById('start_date').value = c.start_date;
+        if(c.start_date) {
+            document.getElementById('start_date').value = c.start_date;
+            document.getElementById('current-date-pill').innerHTML = `<b>${c.start_date}</b>`;
+        } else {
+            document.getElementById('current-date-pill').innerHTML = `<b>Auto</b>`;
+        }
         if(c.filename_filter) document.getElementById('filename_filter').value = c.filename_filter.join(', ');
+        if(c.channels) document.getElementById('channels').value = c.channels.join(', ');
+        if(c.bd_search_paths) document.getElementById('bd_search_paths').value = c.bd_search_paths.join(', ');
         if(c.download_concurrency) document.getElementById('download_concurrency').value = c.download_concurrency;
-        if(c.max_downloads_per_run) document.getElementById('max_downloads_per_run').value = c.max_downloads_per_run;
+        if(c.max_gallery_size) document.getElementById('max_gallery_size').value = c.max_gallery_size;
         if(c.fuzzy_threshold_duplicate) document.getElementById('fuzzy_threshold_duplicate').value = c.fuzzy_threshold_duplicate;
         if(c.fuzzy_threshold_review) document.getElementById('fuzzy_threshold_review').value = c.fuzzy_threshold_review;
     });
@@ -298,17 +460,24 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const date = document.getElementById('start_date').value;
         const filterStr = document.getElementById('filename_filter').value;
         const filter = filterStr ? filterStr.split(',').map(s => s.trim()).filter(s => s) : [];
+        const channelsStr = document.getElementById('channels').value;
+        const channels = channelsStr ? channelsStr.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s)) : [];
+        const bdPathsStr = document.getElementById('bd_search_paths').value;
+        const bdPaths = bdPathsStr ? bdPathsStr.split(',').map(s => s.trim()).filter(s => s) : [];
         const concurrency = parseInt(document.getElementById('download_concurrency').value) || 5;
-        const maxDl = parseInt(document.getElementById('max_downloads_per_run').value) || 50;
+        const maxGal = parseInt(document.getElementById('max_gallery_size').value) || 50;
         const threshDup = parseInt(document.getElementById('fuzzy_threshold_duplicate').value) || 85;
         const threshRev = parseInt(document.getElementById('fuzzy_threshold_review').value) || 50;
+        
+        document.getElementById('current-date-pill').innerHTML = date ? `<b>${date}</b>` : `<b>Auto</b>`;
         
         fetch('/api/config', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 start_date: date, filename_filter: filter, download_concurrency: concurrency,
-                max_downloads_per_run: maxDl, fuzzy_threshold_duplicate: threshDup, fuzzy_threshold_review: threshRev
+                max_gallery_size: maxGal, fuzzy_threshold_duplicate: threshDup, fuzzy_threshold_review: threshRev,
+                channels: channels, bd_search_paths: bdPaths
             })
         });
     }
@@ -334,23 +503,31 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     function bdtUrl(filename) {
       var title = extractTitle(filename);
       if (!title || title.length < 2) return null;
-      if (title.trim().split(/\s+/).length > 5) return null;
-      return 'https://www.bedetheque.com/search/albums?RechTexte=' + encodeURIComponent(title);
+      return 'https://www.google.com/search?q=site%3Abedetheque.com+' + encodeURIComponent(title) + '&btnI=1';
     }
     function closeModal(id) { document.getElementById(id).style.display='none'; }
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') { closeModal('settings-modal'); closeModal('search-modal'); } });
 
     /* Scanner Dynamique */
-    function startDynamicScan() {
+    function startDynamicScan(continueFromLast = false) {
         grid.innerHTML = "";
         DATA.length = 0;
         selected.clear();
+        document.getElementById('btn-scan-next').style.display = 'none';
+        
+        if (continueFromLast && lastScanDate) {
+            document.getElementById('current-date-pill').innerHTML = `<b>${lastScanDate.substring(0, 10)}</b>`;
+        }
+        
         updateCounter();
         
         btnScan.disabled = true;
         statusDiv.innerText = "Connexion...";
         
-        const wsUrl = `ws://${window.location.host}/api/scan_stream`;
+        let wsUrl = `ws://${window.location.host}/api/scan_stream`;
+        if (continueFromLast && lastScanDate) {
+            wsUrl += `?continue_date=${encodeURIComponent(lastScanDate)}`;
+        }
         const ws = new WebSocket(wsUrl);
         
         ws.onmessage = function(event) {
@@ -360,6 +537,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             } else if (msg.type === "done") {
                 statusDiv.innerText = "✅ " + msg.message;
                 btnScan.disabled = false;
+                if (msg.last_date) {
+                    lastScanDate = msg.last_date;
+                    document.getElementById('btn-scan-next').style.display = 'inline-block';
+                }
                 ws.close();
             } else if (msg.type === "error") {
                 statusDiv.innerText = "❌ ERREUR: " + msg.message;
@@ -403,7 +584,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const isSel = selected.has(d.message_id);
         const displayName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
         const cleanName = displayName;
-        const safeOriginal = d.filename.replace(/'/g, "\\'");
+        const safeOriginal = d.filename.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeClean = cleanName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeResults = encodeURIComponent(JSON.stringify(d.everything_results||[])).replace(/'/g, "%27");
         const color = COLORS[d.filename.charCodeAt(0) % COLORS.length];
         
         const imgH  = d.thumb_url
@@ -412,13 +595,13 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           
         const bdtH = (u => u ? `<a class="bdt-link" href="${u}" target="_blank" onclick="event.stopPropagation()" title="BDthèque">📚</a>` : '')(bdtUrl(d.filename));
         
-        return `<div class="card${isSel?' selected':''}" data-id="${d.message_id}" onclick="toggleCard(this)">
+        return `<div class="card${isSel?' selected':''}" data-id="${d.message_id}" data-status="${d.status}" onclick="toggleCard(this)">
           ${imgH}
           ${bdtH}
           <div class="card-info">
             <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()">${displayName}</div>
             <div class="card-meta">${d.channel_name}<br>${d.date} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
-            <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${cleanName}', '${encodeURIComponent(JSON.stringify(d.everything_results))}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
+            <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${safeClean}', '${safeResults}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
             <div class="progress-container" id="dl-container-${d.message_id}">
                 <div class="progress-bar" id="dl-progress-${d.message_id}"></div>
             </div>
@@ -453,7 +636,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       updateCounter();
     }
     function updateCounter(vis) {
-      const v = vis!==undefined ? vis : document.querySelectorAll('.card').length;
+      const v = vis!==undefined ? vis : document.querySelectorAll('.card:not([style*="display: none"])').length;
       const s = selected.size;
       document.getElementById('counter').textContent=`${v} visible / ${s} sélec.`;
       const btn=document.getElementById('export-btn');
@@ -461,12 +644,30 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       btn.disabled=s===0;
     }
     
-    function downloadSelection() {
+    function updateGlobalDownloadIndicator() {
+        let ind = document.getElementById('global-dl-indicator');
+        if(activeDownloadsCount > 0) {
+            ind.style.display = 'block';
+            ind.innerHTML = `<b>⏳ ${activeDownloadsCount} téléchargement(s)</b> (cliquer pour détails)`;
+            ind.style.cursor = 'pointer';
+        } else {
+            ind.style.display = 'none';
+        }
+    }
+    
+    function downloadSelection(isToRead) {
         if (!dlSocket || dlSocket.readyState !== WebSocket.OPEN) {
             alert("Erreur: WebSocket de téléchargement non connecté.");
             return;
         }
-        DATA.filter(d => selected.has(d.message_id)).forEach(d => {
+        const toDownload = DATA.filter(d => selected.has(d.message_id));
+        if (toDownload.length === 0) return;
+        
+        activeDownloadsCount += toDownload.length;
+        updateGlobalDownloadIndicator();
+        
+        toDownload.forEach(d => {
+            downloadsState[d.message_id] = {filename: d.filename, status: 'En file d\'attente...', current:0, total:0};
             dlSocket.send(JSON.stringify({
                 action: "download",
                 message_id: d.message_id,
@@ -553,6 +754,19 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         }
         closeModal('search-modal');
     }
+    
+    function resetManualResult() {
+        const card = document.querySelector(`.card[data-id="${currentModalMsgId}"]`);
+        if(card) {
+            const badge = card.querySelector('.badge');
+            if(badge) {
+                const origStatus = card.dataset.status;
+                badge.className = 'badge ' + origStatus;
+                badge.innerText = origStatus;
+            }
+        }
+        closeModal('search-modal');
+    }
 </script>
 </body>
 </html>
@@ -582,12 +796,16 @@ async def update_config(request: Request):
             config["filename_filter"] = data["filename_filter"]
         if "download_concurrency" in data:
             config["download_concurrency"] = data["download_concurrency"]
-        if "max_downloads_per_run" in data:
-            config["max_downloads_per_run"] = data["max_downloads_per_run"]
+        if "max_gallery_size" in data:
+            config["max_gallery_size"] = data["max_gallery_size"]
         if "fuzzy_threshold_duplicate" in data:
             config["fuzzy_threshold_duplicate"] = data["fuzzy_threshold_duplicate"]
         if "fuzzy_threshold_review" in data:
             config["fuzzy_threshold_review"] = data["fuzzy_threshold_review"]
+        if "channels" in data and isinstance(data["channels"], list) and len(data["channels"]) > 0:
+            config["channels"] = data["channels"]
+        if "bd_search_paths" in data and isinstance(data["bd_search_paths"], list):
+            config["bd_search_paths"] = data["bd_search_paths"]
             
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4, ensure_ascii=False)
@@ -622,11 +840,12 @@ async def manual_everything_search(q: str, original: str):
     
     path_filter = ""
     if search_paths:
-        path_filter = "( " + " | ".join(f'path:"{p}"' for p in search_paths) + " ) "
+        path_parts = " | ".join(f'<"{p}">' for p in search_paths)
+        path_filter = f"<{path_parts}> "
         
     final_query = f"{path_filter}{q} {ext_filter}"
     
-    url = f"{everything_url}/?search={urllib.parse.quote(final_query)}&json=1&count=50"
+    url = f"{everything_url}/?search={urllib.parse.quote(final_query)}&json=1&count=50&path_column=1"
     
     try:
         req = urllib.request.urlopen(url, timeout=5)
@@ -649,7 +868,9 @@ async def manual_everything_search(q: str, original: str):
     except Exception as e:
         return []
 
+
 @app.get("/gallery")
+
 async def serve_gallery():
     gallery_path = os.path.join(PROJECT_DIR, "gallery.html")
     if not os.path.exists(gallery_path):
@@ -682,7 +903,7 @@ exportSelection = function() {
     return HTMLResponse(html)
 
 @app.websocket("/api/scan_stream")
-async def scan_stream(websocket: WebSocket):
+async def scan_stream(websocket: WebSocket, continue_date: str = None):
     await websocket.accept()
     if not telegram_client:
         await websocket.send_json({"type": "error", "message": "Telegram client non connecté (vérifiez api_id/hash dans config.json)."})
@@ -724,6 +945,8 @@ async def scan_stream(websocket: WebSocket):
         dialog_by_id = {d.entity.id: d for d in dialogs}
         
         total_found = 0
+        total_scanned = 0
+        global_last_date = None
         
         for channel in channels:
             if total_found >= max_cards:
@@ -739,7 +962,10 @@ async def scan_stream(websocket: WebSocket):
             await websocket.send_json({"type": "info", "message": f"Scan du channel : {channel_name}..."})
             
             kwargs = {'reverse': True}
-            if start_date_dt:
+            if continue_date:
+                from datetime import datetime
+                kwargs["offset_date"] = datetime.fromisoformat(continue_date)
+            elif start_date_dt:
                 kwargs['offset_date'] = start_date_dt
             else:
                 kwargs['min_id'] = read_max_id
@@ -747,9 +973,15 @@ async def scan_stream(websocket: WebSocket):
             last_photo = None
             
             async for message in telegram_client.iter_messages(entity, **kwargs):
+                if message.date:
+                    global_last_date = message.date.isoformat()
                 if total_found >= max_cards:
                     await websocket.send_json({"type": "info", "message": f"Limite globale de {max_cards} BD atteinte."})
                     break
+                
+                total_scanned += 1
+                if total_scanned % 100 == 0:
+                    await websocket.send_json({"type": "info", "message": f"Scan {channel_name} : {total_scanned} messages analysés..."})
                     
                 if message.photo:
                     last_photo = message
@@ -810,7 +1042,7 @@ async def scan_stream(websocket: WebSocket):
                     await websocket.send_json(data)
                     total_found += 1
                     
-        await websocket.send_json({"type": "done", "message": "Scan terminé !"})
+        await websocket.send_json({"type": "done", "message": f"Terminé ! {total_found} BD trouvées parmi {total_scanned} messages scannés.", "last_date": global_last_date})
         await websocket.close()
         
     except Exception as e:
@@ -818,6 +1050,7 @@ async def scan_stream(websocket: WebSocket):
         await websocket.close()
 
 download_semaphore = None
+active_download_tasks = {}
 
 @app.websocket("/api/downloads_ws")
 async def downloads_ws(websocket: WebSocket):
@@ -838,16 +1071,29 @@ async def downloads_ws(websocket: WebSocket):
         msg_id = data["message_id"]
         channel = int(data["channel"])
         filename = data["filename"]
+        is_to_read = data.get("to_read", False)
         
-        await websocket.send_json({"type": "status", "message_id": msg_id, "status": "En attente..."})
+        await websocket.send_json({"type": "status", "message_id": msg_id, "status": "En file d'attente..."})
+        file_path = None
         
-        async with download_semaphore:
-            await websocket.send_json({"type": "status", "message_id": msg_id, "status": "Préparation..."})
-            try:
+        try:
+            async with download_semaphore:
+                await websocket.send_json({"type": "status", "message_id": msg_id, "status": "Préparation..."})
+                
                 entity = await telegram_client.get_entity(channel)
                 message = await telegram_client.get_messages(entity, ids=msg_id)
                 
-                dl_dir = config.get("download_folder") if 'config' in locals() and config.get("download_folder") else os.path.join(PROJECT_DIR, "downloads")
+                config_path = os.path.join(PROJECT_DIR, "config.json")
+                dl_dir = os.path.join(PROJECT_DIR, "downloads")
+                if os.path.exists(config_path):
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        temp_c = json.load(f)
+                        if temp_c.get("download_path"):
+                            dl_dir = temp_c.get("download_path")
+                            
+                if is_to_read:
+                    dl_dir = os.path.join(dl_dir, "A_Lire")
+                    
                 os.makedirs(dl_dir, exist_ok=True)
                 file_path = os.path.join(dl_dir, filename)
                 
@@ -866,14 +1112,29 @@ async def downloads_ws(websocket: WebSocket):
                     progress_callback=progress_cb
                 )
                 await websocket.send_json({"type": "status", "message_id": msg_id, "status": "Terminé ✅"})
-            except Exception as e:
-                await websocket.send_json({"type": "status", "message_id": msg_id, "status": f"Erreur ❌"})
+        except asyncio.CancelledError:
+            await websocket.send_json({"type": "status", "message_id": msg_id, "status": "Annulé ❌"})
+            if file_path and os.path.exists(file_path):
+                try: os.remove(file_path)
+                except: pass
+        except Exception as e:
+            await websocket.send_json({"type": "status", "message_id": msg_id, "status": f"Erreur ❌"})
+            if file_path and os.path.exists(file_path):
+                try: os.remove(file_path)
+                except: pass
+        finally:
+            active_download_tasks.pop(msg_id, None)
 
     try:
         while True:
             data = await websocket.receive_json()
             if data.get("action") == "download":
-                asyncio.create_task(download_task(data))
+                task = asyncio.create_task(download_task(data))
+                active_download_tasks[data["message_id"]] = task
+            elif data.get("action") == "cancel":
+                msg_id = data.get("message_id")
+                if msg_id in active_download_tasks:
+                    active_download_tasks[msg_id].cancel()
     except Exception:
         pass
 

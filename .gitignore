@@ -29,3 +29,4 @@ build/
 _fix_*.py
 .DS_Store
 Thumbs.db
+downloads/
