@@ -110,7 +110,7 @@ h1 {font-size:1.15rem;color:#60a5fa;flex:0 0 auto;white-space:nowrap; margin-rig
 .badge.NOUVEAU {background:#052e16;color:#22c55e;border:1px solid #22c55e40}
 .badge.INCERTAIN {background:#1c1407;color:#f59e0b;border:1px solid #f59e0b40}
 .badge.DOUBLON {background:#2e0505;color:#ef4444;border:1px solid #ef444440}
-.checkmark {position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;
+.checkmark {position:absolute;top:7px;right:36px;width:22px;height:22px;border-radius:50%;
   background:#22c55e;color:#fff;display:none;align-items:center;justify-content:center;
   font-size:13px;font-weight:700;box-shadow:0 2px 6px #00000060}
 .card.selected .checkmark {display:flex}
@@ -118,6 +118,14 @@ h1 {font-size:1.15rem;color:#60a5fa;flex:0 0 auto;white-space:nowrap; margin-rig
   background:#1e293bcc;color:#60a5fa;display:flex;align-items:center;justify-content:center;
   font-size:12px;text-decoration:none;opacity:0;transition:opacity .2s;border:1px solid #3b82f660}
 .card:hover .bdt-link {opacity:1}
+
+.pin-link {position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;
+  background:#1e293bcc;color:white;display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;opacity:0;transition:all .2s;border:1px solid #94a3b860; z-index:10;}
+.card:hover .pin-link {opacity:1}
+.pin-link.pinned {opacity:1; background:#0f172acc; border:1px solid #f59e0b;}
+.pin-link:hover {transform:scale(1.1);}
+
 
 /* Progress bar inside card */
 .progress-container { width:100%; background-color:#0f172a; border-radius:4px; overflow:hidden; height:6px; display:none; margin-top:4px;}
@@ -162,6 +170,8 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
      <button class="btn" style="background:#f59e0b; color:white; border:none;" onclick="loadPileALire()">📚 Ma pile à lire</button>
 
 <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner</button>
+<input type="text" id="tg-search" placeholder="Chercher sur Telegram..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px; margin-left:10px;" onkeydown="if(event.key==='Enter') startTgSearch()">
+<button class="btn btn-primary" onclick="startTgSearch()" style="padding:6px 10px;">🔍</button>
 <button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true)">⏩ Scanner BDs suivantes</button>
 
      <button class="btn" onclick="document.getElementById('settings-modal').style.display='flex'">⚙️ Config</button>
@@ -296,6 +306,8 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     let downloadsState = {};
     let lastScanDate = null;
     let lastTotalBytes = 0;
+    let currentSearchQuery = null;
+    let searchSkipCount = 0;
     
     // Add onclick to indicator
     document.getElementById('global-dl-indicator').onclick = function() {
@@ -518,10 +530,39 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     /* Scanner Dynamique */
     
     
+    
+    function addDownloadTask(msg_id, channel, filename, toRead) {
+        if (!dlSocket || dlSocket.readyState !== WebSocket.OPEN) {
+            alert("Erreur: WebSocket de téléchargement non connecté.");
+            return;
+        }
+        activeDownloadsCount++;
+        updateGlobalDownloadIndicator();
+        downloadsState[msg_id] = {filename: filename, status: 'En file d\'attente...', current:0, total:0};
+        dlSocket.send(JSON.stringify({
+            action: "download",
+            message_id: msg_id,
+            channel: channel,
+            filename: filename,
+            to_read: toRead
+        }));
+    }
+
     function addToRead(msg_id, status, filename, channel) {
         if (status === 'INCERTAIN') return;
         
         const btn = document.getElementById('btn-read-' + msg_id);
+        
+        if (toReadList.has(filename)) {
+            if(btn) { btn.classList.remove('pinned'); btn.title = 'Ajouter à la pile à lire'; btn.style.transform = 'scale(0.8)'; setTimeout(()=>btn.style.transform='none',200); }
+            toReadList.delete(filename);
+            fetch('/api/remove_to_read', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filename: filename})
+            });
+            return;
+        }
         
         if (status === 'DOUBLON') {
             const item = DATA.find(d => d.message_id === msg_id);
@@ -530,7 +571,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 const localName = item.everything_results[0].filename;
                 const fullLocalPath = localPath.endsWith("\\") ? localPath + localName : localPath + "\\" + localName;
                 
-                if(btn) { btn.style.background = '#f59e0b'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
+                if(btn) { btn.classList.add('pinned'); btn.title = 'Retirer de la pile à lire'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
                 toReadList.add(filename);
                 
                 fetch('/api/add_to_read_local', {
@@ -544,7 +585,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 });
             }
         } else {
-            if(btn) { btn.style.background = '#f59e0b'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
+            if(btn) { btn.classList.add('pinned'); btn.title = 'Retirer de la pile à lire'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
             toReadList.add(filename);
             addDownloadTask(msg_id, channel, filename, true);
         }
@@ -567,7 +608,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 
                 return `<div class="card" style="cursor:default;">
                   ${imgH}
-                  <button onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" style="position:absolute; top:7px; right:7px; background:#ef4444; color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:10;" title="Marquer comme lu (Supprimer)">✖️</button>
+                  <div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" title="Retirer de la pile à lire">📌</div>
                   <div class="card-info" style="margin-top:auto;">
                     <div class="card-title">${cleanName}</div>
                   </div>
@@ -577,7 +618,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }
     
     function removeFromRead(filename) {
-        if(!confirm("Supprimer cette BD de la pile à lire ?")) return;
+        toReadList.delete(filename);
         fetch('/api/remove_to_read', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -585,7 +626,15 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         }).then(() => loadPileALire());
     }
 
-    function startDynamicScan(continueFromLast = false) {
+    function startTgSearch() {
+        const q = document.getElementById('tg-search').value.trim();
+        if(!q) return;
+        currentSearchQuery = q;
+        searchSkipCount = 0;
+        startDynamicScan(false, q);
+    }
+
+    function startDynamicScan(continueFromLast = false, searchQuery = null) {
         grid.innerHTML = "";
         DATA.length = 0;
         selected.clear();
@@ -601,9 +650,18 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         statusDiv.innerText = "Connexion...";
         
         let wsUrl = `ws://${window.location.host}/api/scan_stream`;
-        if (continueFromLast && lastScanDate) {
-            wsUrl += `?continue_date=${encodeURIComponent(lastScanDate)}`;
+        const params = [];
+        if (searchQuery) {
+            params.push(`search_query=${encodeURIComponent(searchQuery)}`);
+            if (continueFromLast) {
+                params.push(`skip=${searchSkipCount}`);
+            }
+        } else {
+            currentSearchQuery = null;
+            if (continueFromLast && lastScanDate) params.push(`continue_date=${encodeURIComponent(lastScanDate)}`);
         }
+        if (params.length > 0) wsUrl += "?" + params.join('&');
+        
         const ws = new WebSocket(wsUrl);
         
         ws.onmessage = function(event) {
@@ -623,6 +681,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 btnScan.disabled = false;
             } else if (msg.type === "comic") {
                 DATA.push(msg);
+                if (currentSearchQuery) searchSkipCount++;
                 applyFilters();
             }
         };
@@ -675,7 +734,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           ${imgH}
           ${bdtH}
           
-          ${d.status !== 'INCERTAIN' ? `<button class="btn-read" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="Ajouter à la pile à lire" style="position:absolute; bottom:30px; right:7px; background:${toReadList.has(d.filename) ? '#f59e0b' : '#10b981'}; color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:10; transition:background 0.3s;">📖</button>` : `<button class="btn-read" id="btn-read-${d.message_id}" style="display:none; position:absolute; bottom:30px; right:7px; background:#10b981; color:white; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:12px; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.5); z-index:10; transition:background 0.3s;" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})">📖</button>`}
+          ${d.status !== 'INCERTAIN' ? `<div class="pin-link ${toReadList.has(d.filename) ? 'pinned' : ''}" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="${toReadList.has(d.filename) ? 'Retirer de la pile à lire' : 'Ajouter à la pile à lire'}">📌</div>` : `<div class="pin-link" id="btn-read-${d.message_id}" style="display:none;" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="Ajouter à la pile à lire">📌</div>`}
 
 
           <div class="card-info">
@@ -995,7 +1054,7 @@ exportSelection = function() {
     return HTMLResponse(html)
 
 @app.websocket("/api/scan_stream")
-async def scan_stream(websocket: WebSocket, continue_date: str = None):
+async def scan_stream(websocket: WebSocket, continue_date: str = None, search_query: str = None, skip: int = 0):
     await websocket.accept()
     if not telegram_client:
         await websocket.send_json({"type": "error", "message": "Telegram client non connecté (vérifiez api_id/hash dans config.json)."})
@@ -1053,14 +1112,18 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None):
             
             await websocket.send_json({"type": "info", "message": f"Scan du channel : {channel_name}..."})
             
-            kwargs = {'reverse': True}
-            if continue_date:
-                from datetime import datetime
-                kwargs["offset_date"] = datetime.fromisoformat(continue_date)
-            elif start_date_dt:
-                kwargs['offset_date'] = start_date_dt
+            skipped_so_far = 0
+            if search_query:
+                kwargs = {'search': search_query, 'limit': 100}
             else:
-                kwargs['min_id'] = read_max_id
+                kwargs = {'reverse': True}
+                if continue_date:
+                    from datetime import datetime
+                    kwargs["offset_date"] = datetime.fromisoformat(continue_date)
+                elif start_date_dt:
+                    kwargs['offset_date'] = start_date_dt
+                else:
+                    kwargs['min_id'] = read_max_id
                 
             last_photo = None
             
@@ -1080,6 +1143,10 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None):
                     continue
                     
                 if message.document:
+                    if search_query and skipped_so_far < skip:
+                        skipped_so_far += 1
+                        continue
+                        
                     filename, ext = _extract_filename_and_ext(message)
                     
                     cover = None
@@ -1087,6 +1154,16 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None):
                         same_group = (message.grouped_id and message.grouped_id == last_photo.grouped_id)
                         if same_group or (0 <= message.id - last_photo.id <= 5):
                             cover = last_photo
+                    
+                    if search_query and cover is None:
+                        context_msgs = await telegram_client.get_messages(entity, limit=5, max_id=message.id)
+                        for c_msg in context_msgs:
+                            if c_msg.photo:
+                                same_group = (message.grouped_id and message.grouped_id == c_msg.grouped_id)
+                                if same_group or (0 <= message.id - c_msg.id <= 5):
+                                    cover = c_msg
+                                    break
+                                    
                     last_photo = None
                     
                     if ext not in SUPPORTED_EXTENSIONS:
@@ -1142,6 +1219,18 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None):
         await websocket.close()
 
 
+
+def trigger_yacreader_update():
+    import subprocess
+    alire_dir = os.path.join(PROJECT_DIR, "A_lire_yacreader")
+    exe_path = r"C:\Program Files\YACReader\YACReaderLibraryServer.exe"
+    if os.path.exists(exe_path):
+        try:
+            subprocess.Popen([exe_path, "update-library", alire_dir], creationflags=subprocess.CREATE_NO_WINDOW)
+        except Exception as e:
+            print(f"Erreur update YACReader: {e}")
+
+
 import shutil
 
 @app.post("/api/add_to_read_local")
@@ -1175,6 +1264,7 @@ async def add_to_read_local(request: Request):
         except:
             pass
             
+    trigger_yacreader_update()
     return {"status": "ok"}
 
 @app.get("/api/list_to_read")
@@ -1214,6 +1304,7 @@ async def remove_to_read(request: Request):
         try: os.remove(thumb_path)
         except: pass
         
+    trigger_yacreader_update()
     return {"status": "ok"}
 
 download_semaphore = None
@@ -1263,6 +1354,7 @@ async def downloads_ws(websocket: WebSocket):
                     
                 os.makedirs(dl_dir, exist_ok=True)
                 file_path = os.path.join(dl_dir, filename)
+                temp_file_path = file_path + ".part"
                 
                 def progress_cb(current, total):
                     # Call async from sync context is tricky inside Telethon, so we just create a task
@@ -1275,19 +1367,37 @@ async def downloads_ws(websocket: WebSocket):
                 
                 await telegram_client.download_media(
                     message.document, 
-                    file=file_path,
+                    file=temp_file_path,
                     progress_callback=progress_cb
                 )
+                
+                if os.path.exists(temp_file_path):
+                    os.rename(temp_file_path, file_path)
+                    
+                if is_to_read:
+                    alire_dir = os.path.join(PROJECT_DIR, "A_lire_yacreader")
+                    os.makedirs(alire_dir, exist_ok=True)
+                    try: shutil.copy2(file_path, os.path.join(alire_dir, filename))
+                    except: pass
+                    
+                    thumb_src = os.path.join(PROJECT_DIR, "thumbs", f"{msg_id}.jpg")
+                    name_no_ext = os.path.splitext(filename)[0]
+                    thumb_dest = os.path.join(alire_dir, f"{name_no_ext}.jpg")
+                    if os.path.exists(thumb_src):
+                        try: shutil.copy2(thumb_src, thumb_dest)
+                        except: pass
+                    trigger_yacreader_update()
+                    
                 await websocket.send_json({"type": "status", "message_id": msg_id, "status": "Terminé ✅"})
         except asyncio.CancelledError:
             await websocket.send_json({"type": "status", "message_id": msg_id, "status": "Annulé ❌"})
-            if file_path and os.path.exists(file_path):
-                try: os.remove(file_path)
+            if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+                try: os.remove(temp_file_path)
                 except: pass
         except Exception as e:
             await websocket.send_json({"type": "status", "message_id": msg_id, "status": f"Erreur ❌"})
-            if file_path and os.path.exists(file_path):
-                try: os.remove(file_path)
+            if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+                try: os.remove(temp_file_path)
                 except: pass
         finally:
             active_download_tasks.pop(msg_id, None)
