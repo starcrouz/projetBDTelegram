@@ -61,10 +61,11 @@ INDEX_HTML = r"""
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BD Telegram — Mode SPA</title>
-<style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BD Telegram Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+    <style>
 * {box-sizing:border-box;margin:0;padding:0}
 :root {--card-w:180px}
 body {font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
@@ -161,43 +162,75 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 </head>
 <body>
 
-<header>
-  <h1>📚 BD Telegram</h1>
-  <div class="pills">
-     
-<!-- Pagination button -->
-
-     <button class="btn" style="background:#f59e0b; color:white; border:none;" onclick="loadPileALire()">📚 Ma pile à lire</button>
-
-<button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner</button>
-<input type="text" id="tg-search" placeholder="Chercher sur Telegram..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px; margin-left:10px;" onkeydown="if(event.key==='Enter') startTgSearch()">
-<button class="btn btn-primary" onclick="startTgSearch()" style="padding:6px 10px;">🔍</button>
-<button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true)">⏩ Scanner BDs suivantes</button>
-
-     <button class="btn" onclick="document.getElementById('settings-modal').style.display='flex'">⚙️ Config</button>
-     <div class="pill blue" id="current-date-pill" style="align-self:center; cursor:pointer;" onclick="document.getElementById('settings-modal').style.display='flex'"><b>Auto</b></div>
-     <div class="pill yellow" id="global-dl-indicator" style="display:none; align-self:center;"></div>
-     <span id="scan-status" style="margin-left: 10px; align-self: center; font-size: 0.8rem; color: #38bdf8;">Prêt.</span>
+<header style="flex-direction: column; gap: 10px; align-items: stretch; padding: 10px 20px;">
+  <div style="display:flex; justify-content:space-between; width:100%;">
+      <h1>📚 BD Telegram</h1>
+      <div class="actions">
+        <button class="btn" onclick="document.getElementById('settings-modal').style.display='flex'">⚙️ Config</button>
+      </div>
   </div>
-  <div class="filters">
-    <button class="fb active" onclick="setFilter('ALL',this)">Tous</button>
-    <button class="fb" onclick="setFilter('NOUVEAU',this)">Nouveaux</button>
-    <button class="fb" onclick="setFilter('INCERTAIN',this)">Incertains</button>
-    <button class="fb" onclick="setFilter('DOUBLON',this)">Doublons</button>
+  
+  <div style="display:flex; gap: 20px; flex-wrap: wrap; background: #1e293b; padding: 10px; border-radius: 8px; align-items: stretch;">
+      <!-- Catégorie: Bibliothèque Locale -->
+      <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
+          <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Bibliothèque Locale</h3>
+          <div style="display:flex; gap:10px;">
+              <button class="btn" style="background:#f59e0b; color:white; border:none;" onclick="loadPileALire()">📚 Ma pile à lire</button>
+              <input type="text" id="local-search" placeholder="Recherche (Everywhere)..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px;" onkeydown="if(event.key==='Enter') executeLocalSearch()">
+              <button class="btn btn-primary" onclick="executeLocalSearch()" style="padding:6px 10px;">🔍</button>
+          </div>
+      </div>
+      
+      <!-- Catégorie: Scan Telegram -->
+      <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
+          <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Scan Chronologique (Telegram)</h3>
+          <div style="display:flex; gap:10px; align-items:center;">
+              <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner Nouveautés</button>
+              <button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true, null)">⏩ Suivantes</button>
+              <div class="pill blue" id="current-date-pill" style="cursor:pointer; display:none;" onclick="document.getElementById('settings-modal').style.display='flex'"><b>Auto</b></div>
+          </div>
+      </div>
+      
+      <!-- Catégorie: Recherche Telegram -->
+      <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
+          <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Recherche Spécifique (Telegram)</h3>
+          <div style="display:flex; gap:10px;">
+              <input type="text" id="tg-search" placeholder="Titre de la BD..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px;" onkeydown="if(event.key==='Enter') startTgSearch()">
+              <button class="btn btn-primary" onclick="startTgSearch()" style="padding:6px 10px;">🔍</button>
+              <button class="btn" id="btn-search-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true, currentSearchQuery)">⏩ Suivantes</button>
+          </div>
+      </div>
+      
+      <!-- Catégorie: Téléchargements -->
+      <div style="display:flex; flex-direction:column; justify-content:center; gap:8px;">
+          <div class="pill yellow" id="global-dl-indicator" style="display:none; cursor:pointer; font-weight:bold; height: 100%; align-items:center; justify-content:center; padding: 0 15px;" onclick="document.getElementById('downloads-modal').style.display='flex'"></div>
+      </div>
   </div>
-  <div class="search-wrap">
-    <input id="search" type="text" placeholder="🔍 Filtrer résultats..." oninput="applyFilters()">
-  </div>
-  <div class="zoom-wrap">🔍 <input type="range" id="zoom" min="130" max="320" value="180" oninput="setZoom(this.value)"></div>
-  <div class="actions">
-    <button class="btn" onclick="selectAllVisible()">Tout cocher</button>
-    <button class="btn" onclick="deselectAll()">Décocher</button>
-    <span id="counter">0 visible / 0 sélec.</span>
-    <button id="export-btn" class="btn-download" disabled onclick="downloadSelection(false)">⬇️ Télécharger (0)</button>
+  
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 5px;" id="scan-controls">
+      <div class="filters">
+        <button class="fb active" onclick="setFilter('ALL',this)">Tous</button>
+        <button class="fb" onclick="setFilter('NOUVEAU',this)">Nouveaux</button>
+        <button class="fb" onclick="setFilter('INCERTAIN',this)">Incertains</button>
+        <button class="fb" onclick="setFilter('DOUBLON',this)">Doublons</button>
+        <span id="scan-status" style="margin-left: 10px; font-size: 0.8rem; color: #38bdf8;">Prêt.</span>
+      </div>
+      <div class="search-wrap">
+        <input id="search" type="text" placeholder="🔍 Filtrer résultats affichés..." oninput="applyFilters()">
+      </div>
+      <div class="zoom-wrap">🔍 <input type="range" id="zoom" min="130" max="320" value="180" oninput="setZoom(this.value)"></div>
+      <div class="actions">
+        <button class="btn" onclick="selectAllVisible()">Tout cocher</button>
+        <button class="btn" onclick="deselectAll()">Décocher</button>
+        <span id="counter">0 visible / 0 sélec.</span>
+        <button id="export-btn" class="btn-download" disabled onclick="downloadSelection(false)">⬇️ Télécharger (0)</button>
+      </div>
   </div>
 </header>
 
+
 <div id="grid" class="grid"></div>
+<div id="pile-grid" class="grid" style="display:none;"></div>
 <div id="no-results">Aucun album pour ce filtre ou la galerie est vide.</div>
 
 <!-- Modal Config -->
@@ -549,7 +582,6 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }
 
     function addToRead(msg_id, status, filename, channel) {
-        if (status === 'INCERTAIN') return;
         
         const btn = document.getElementById('btn-read-' + msg_id);
         
@@ -591,26 +623,32 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         }
     }
     function loadPileALire() {
-        grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Chargement de la pile à lire...</h2>";
+        document.getElementById('grid').style.display = 'none';
+        document.getElementById('scan-controls').style.display = 'none';
+        const pGrid = document.getElementById('pile-grid');
+        pGrid.style.display = 'grid';
+        pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Chargement de la pile à lire...</h2>";
         document.getElementById('no-results').style.display = 'none';
         
         fetch('/api/list_to_read')
         .then(r=>r.json())
         .then(items => {
             if (!items || items.length === 0) {
-                grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>";
+                pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>";
                 return;
             }
             
-            grid.innerHTML = items.map(d => {
+            pGrid.innerHTML = items.map(d => {
                 const cleanName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
-                const imgH = `<img class="cover" src="${d.thumb_url}?t=${Date.now()}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
+                const imgH = `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
+                const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
+                const ext = extMatch ? extMatch[1].toUpperCase() : '';
                 
                 return `<div class="card" style="cursor:default;">
                   ${imgH}
                   <div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" title="Retirer de la pile à lire">📌</div>
                   <div class="card-info" style="margin-top:auto;">
-                    <div class="card-title">${cleanName}</div>
+                    <div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
                   </div>
                 </div>`;
             }).join('');
@@ -635,10 +673,18 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }
 
     function startDynamicScan(continueFromLast = false, searchQuery = null) {
-        grid.innerHTML = "";
+        document.getElementById('pile-grid').style.display = 'none';
+        document.getElementById('grid').style.display = 'grid';
+        document.getElementById('scan-controls').style.display = 'flex';
+        
+        if (!continueFromLast) {
+            grid.innerHTML = "";
+            DATA.length = 0;
+            selected.clear();
+        }
         DATA.length = 0;
         selected.clear();
-        document.getElementById('btn-scan-next').style.display = 'none';
+        document.getElementById('btn-scan-next').style.display = 'none'; document.getElementById('btn-search-next').style.display = 'none';
         
         if (continueFromLast && lastScanDate) {
             document.getElementById('current-date-pill').innerHTML = `<b>${lastScanDate.substring(0, 10)}</b>`;
@@ -723,6 +769,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const safeClean = cleanName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const safeResults = encodeURIComponent(JSON.stringify(d.everything_results||[])).replace(/'/g, "%27");
         const color = COLORS[d.filename.charCodeAt(0) % COLORS.length];
+        const isPinned = toReadList.has(d.filename);
+        const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
+        const ext = extMatch ? extMatch[1].toUpperCase() : '';
         
         const imgH  = d.thumb_url
           ? `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:linear-gradient(135deg,${color}44,#0f172a)">${d.filename[0].toUpperCase()}</div>`
@@ -734,11 +783,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           ${imgH}
           ${bdtH}
           
-          ${d.status !== 'INCERTAIN' ? `<div class="pin-link ${toReadList.has(d.filename) ? 'pinned' : ''}" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="${toReadList.has(d.filename) ? 'Retirer de la pile à lire' : 'Ajouter à la pile à lire'}">📌</div>` : `<div class="pin-link" id="btn-read-${d.message_id}" style="display:none;" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="Ajouter à la pile à lire">📌</div>`}
-
+          <div class="pin-link ${isPinned ? 'pinned' : ''}" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="${isPinned ? 'Retirer de la pile à lire' : 'Ajouter à la pile à lire'}">📌</div>
 
           <div class="card-info">
-            <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()">${displayName}</div>
+            <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()">${displayName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
             <div class="card-meta">${d.channel_name}<br>${d.date} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
             <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${safeClean}', '${safeResults}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
             <div class="progress-container" id="dl-container-${d.message_id}">
@@ -1349,9 +1397,6 @@ async def downloads_ws(websocket: WebSocket):
                         if temp_c.get("download_path"):
                             dl_dir = temp_c.get("download_path")
                             
-                if is_to_read:
-                    dl_dir = os.path.join(dl_dir, "A_Lire")
-                    
                 os.makedirs(dl_dir, exist_ok=True)
                 file_path = os.path.join(dl_dir, filename)
                 temp_file_path = file_path + ".part"
@@ -1425,6 +1470,30 @@ if __name__ == "__main__":
     import uvicorn
     import sys
     import asyncio
+    
+    # Cleanup .part files on startup
+    import json
+    dl_dir = os.path.join(PROJECT_DIR, "downloads")
+    config_path = os.path.join(PROJECT_DIR, "config.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                c = json.load(f)
+                if c.get("download_path"):
+                    dl_dir = c.get("download_path")
+        except:
+            pass
+
+    dirs_to_clean = [dl_dir]
+    for ddir in dirs_to_clean:
+        if os.path.exists(ddir):
+            for file in os.listdir(ddir):
+                if file.endswith(".part"):
+                    try:
+                        os.remove(os.path.join(ddir, file))
+                    except:
+                        pass
+    
     if sys.platform == 'win32':
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     uvicorn.run("web_ui:app", host="127.0.0.1", port=8000, reload=True)
