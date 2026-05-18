@@ -9,7 +9,7 @@ from tqdm import tqdm
 from logger import log_success, log_error
 
 
-async def download_file(client, file_info, download_path):
+async def download_file(client, file_info, download_path, task_idx=None):
     """
     Télécharge un fichier depuis Telegram vers le dossier de destination.
 
@@ -17,6 +17,7 @@ async def download_file(client, file_info, download_path):
         client        : TelegramClient authentifié
         file_info     : dict retourné par telegram_scraper.get_bd_files()
         download_path : chemin du dossier de destination
+        task_idx      : index de la tâche pour le positionnement de tqdm
 
     Retourne le chemin du fichier téléchargé, ou None en cas d'erreur.
     """
@@ -47,6 +48,8 @@ async def download_file(client, file_info, download_path):
             desc="     ",
             ncols=70,
             leave=True,
+            position=task_idx if task_idx is not None else 0,
+            mininterval=2.0 if os.environ.get("WEB_UI_MODE") == "1" else 0.1,
         ) as pbar:
             def progress_callback(current, total):
                 pbar.update(current - pbar.n)

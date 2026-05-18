@@ -16,22 +16,26 @@ STOP_WORDS = {
 
 def normalize(filename):
     """Normalise un nom de fichier BD pour comparaison."""
-    name = os.path.splitext(filename)[0]
-    name = name.lower()
+    name = filename.lower()
+    # Retirer l'extension si présente
+    name = re.sub(r'\.(cbr|cbz|pdf|epub|rar|zip)$', '', name, flags=re.IGNORECASE)
+    # Remplacer les séparateurs par des espaces
     name = re.sub(r'[\-_\.\[\]\(\)\{\}]+', ' ', name)
     name = re.sub(r'\s+', ' ', name).strip()
     return name
 
 
-def get_search_keywords(filename, max_keywords=5):
-    """Extrait les mots-clés les plus distinctifs d'un nom de fichier."""
+def get_search_keywords(filename, max_keywords=2):
+    """Extrait les mots-clés les plus distinctifs (les premiers du titre)."""
     name = normalize(filename)
     words = name.split()
+    # Garder les mots qui ne sont pas des stop words
     keywords = [w for w in words if len(w) >= 2 and w not in STOP_WORDS]
     if not keywords:
         keywords = [w for w in words if len(w) >= 2]
-    # Priorité aux mots les plus longs (plus distinctifs)
-    return sorted(keywords, key=len, reverse=True)[:max_keywords]
+    
+    # On prend les 3 premiers mots (généralement la série + le tome)
+    return keywords[:max_keywords]
 
 
 def fuzzy_score(telegram_filename, collection_filename):

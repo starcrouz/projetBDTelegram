@@ -1,39 +1,30 @@
 {
     "_comment": "Copiez ce fichier en config.json et remplissez vos informations. Ne partagez jamais config.json (credentials Telegram).",
-
     "api_id": 12345678,
     "api_hash": "votre_api_hash_ici_32_caracteres",
-
     "channels": [
         -1001234567890,
         -1009876543210
     ],
-
     "download_path": "F:\\Téléchargements\\_BD\\Telegram",
-
     "everything_api_url": "http://localhost:8070",
-
     "max_downloads_per_run": 0,
     "_max_downloads_per_run_comment": "0 = illimite. Mettre ex: 50 pour la 1ere execution si vous avez beaucoup de retard.",
-
     "delay_between_downloads": 5,
     "_delay_between_downloads_comment": "Delai en secondes entre chaque telechargement. Minimum recommande : 3s.",
-
     "days_lookback": 30,
     "_days_lookback_comment": "Utilise UNIQUEMENT si un channel n'est pas trouve dans vos dialogs (cas rare).",
-
     "bd_search_paths": [
         "F:\\Téléchargements",
         "F:\\BD Topectra",
         "F:\\BD"
     ],
     "_bd_search_paths_comment": "Dossiers de votre collection BD pour le rapport --review. Laisser [] pour chercher partout.",
-
     "fuzzy_threshold_duplicate": 85,
     "_fuzzy_threshold_duplicate_comment": "Score >= ce seuil (0-100) : considere DOUBLON dans le rapport --review.",
-
     "fuzzy_threshold_review": 50,
     "_fuzzy_threshold_review_comment": "Score entre ce seuil et fuzzy_threshold_duplicate : marque INCERTAIN (a verifier manuellement).",
-
-    "session_name": "telegram_bd_session"
+    "session_name": "telegram_bd_session",
+    "start_date": "",
+    "_start_date_comment": "Format YYYY-MM-DD. Si renseigne, ignore le curseur Telegram et scanne depuis cette date."
 }

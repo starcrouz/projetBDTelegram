@@ -21,7 +21,7 @@ import os
 import sys
 import argparse
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from telethon import TelegramClient
 
@@ -62,6 +62,15 @@ def load_config():
         log_error("Vous n'avez pas encore rempli api_id dans config.json !")
         log_error("Rendez-vous sur https://my.telegram.org pour obtenir vos credentials.")
         sys.exit(1)
+
+    if config.get("start_date"):
+        try:
+            config["start_date_dt"] = datetime.strptime(config["start_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            log_error("Format start_date invalide. Utilisez YYYY-MM-DD.")
+            sys.exit(1)
+    else:
+        config["start_date_dt"] = None
 
     return config
 
@@ -247,6 +256,7 @@ async def cmd_gallery(config):
                     read_max_id,
                     filename_filter=filename_filter,
                     limit=max_cards,
+                    start_date_dt=config.get("start_date_dt")
                 )
                 # Memoriser la frontiere du scan pour ce channel
                 if max_scanned > 0:
@@ -427,7 +437,7 @@ async def cmd_download_selection(config):
                         "message":    msg,
                         "message_id": message_id,
                     }
-                    result = await download_file(client, file_info, download_path)
+                    result = await download_file(client, file_info, download_path, task_idx=i)
                     async with lock:
                         if result:
                             stats["downloaded"] += 1
@@ -519,7 +529,7 @@ async def run(config, dry_run=False):
 
         # 1. Récupérer tous les fichiers BD non lus (triés oldest-first)
         files, read_ids = await get_bd_files(client, channels, days_lookback,
-                                             filename_filter=filename_filter)
+                                             filename_filter=filename_filter, start_date_dt=config.get("start_date_dt"))
         stats["found"] = len(files)
 
         log_separator()

@@ -86,7 +86,7 @@ def test_everything_connection(api_url):
         return False
 
 
-def search_by_keywords(filename, search_paths=None, api_url="http://localhost:8070", count=8):
+def search_by_keywords(filename, search_paths=None, api_url="http://localhost:8070", count=50):
     """
     Recherche dans Everything par mots-cles extraits du nom de fichier Telegram,
     optionnellement limitee aux dossiers BD configures dans bd_search_paths.
@@ -102,7 +102,7 @@ def search_by_keywords(filename, search_paths=None, api_url="http://localhost:80
     if not keywords:
         return []
 
-    ext_filter = "ext:cbz;cbr;pdf"
+    ext_filter = "ext:cbz;cbr;pdf;epub;rar;zip"
     keyword_str = " ".join(keywords)
 
     if search_paths:

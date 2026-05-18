@@ -20,7 +20,7 @@ MIME_TO_EXT = {
 
 
 async def scan_gallery_files(client, entity, channel_id, channel_name,
-                              read_max_id, filename_filter=None, limit=None):
+                              read_max_id, filename_filter=None, limit=None, start_date_dt=None):
     """
     Parcourt oldest-first, associe photos aux documents, s'arrete a `limit` fichiers.
     Retourne (files, max_message_id_scanne).
@@ -29,7 +29,13 @@ async def scan_gallery_files(client, entity, channel_id, channel_name,
     last_photo   = None
     max_scanned  = 0  # ID le plus haut vu dans ce scan
 
-    async for message in client.iter_messages(entity, min_id=read_max_id, reverse=True):
+    kwargs = {'reverse': True}
+    if start_date_dt:
+        kwargs['offset_date'] = start_date_dt
+    else:
+        kwargs['min_id'] = read_max_id
+
+    async for message in client.iter_messages(entity, **kwargs):
         max_scanned = max(max_scanned, message.id)
 
         if message.photo:

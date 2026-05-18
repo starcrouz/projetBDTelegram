@@ -70,7 +70,7 @@ async def list_subscribed_channels(client):
 
 
 
-async def get_bd_files(client, channels, days_lookback=30, filename_filter=None):
+async def get_bd_files(client, channels, days_lookback=30, filename_filter=None, start_date_dt=None):
     """
     Parcourt les channels Telegram et retourne UNIQUEMENT les fichiers BD
     presents dans les messages non lus, tries du plus ancien au plus recent.
@@ -120,6 +120,7 @@ async def get_bd_files(client, channels, days_lookback=30, filename_filter=None)
                     min_id=read_max_id,
                     cutoff_date=None,
                     filename_filter=filename_filter,
+                    start_date_dt=start_date_dt,
                 )
 
             else:
@@ -131,6 +132,7 @@ async def get_bd_files(client, channels, days_lookback=30, filename_filter=None)
                     min_id=0,
                     cutoff_date=cutoff_date,
                     filename_filter=filename_filter,
+                    start_date_dt=start_date_dt,
                 )
 
             log_info(f"  → {len(channel_files)} fichier(s) BD non lu(s) trouvé(s)")
@@ -147,7 +149,7 @@ async def get_bd_files(client, channels, days_lookback=30, filename_filter=None)
     return found_files, read_ids
 
 
-async def _scan_messages(client, entity, channel, channel_name, min_id, cutoff_date, filename_filter=None):
+async def _scan_messages(client, entity, channel, channel_name, min_id, cutoff_date, filename_filter=None, start_date_dt=None):
     """
     Parcourt les messages d'un channel et retourne les fichiers BD trouves.
     filename_filter : liste de chaines dont au moins une doit apparaitre dans
@@ -156,7 +158,16 @@ async def _scan_messages(client, entity, channel, channel_name, min_id, cutoff_d
     channel_files = []
     skipped_filter = 0
 
-    async for message in client.iter_messages(entity, min_id=min_id):
+    kwargs = {}
+    if start_date_dt:
+        kwargs['offset_date'] = start_date_dt
+        kwargs['reverse'] = True
+    else:
+        kwargs['min_id'] = min_id
+
+    async for message in client.iter_messages(entity, **kwargs):
+        # Reverse=True gives oldest first. If we didn't use reverse=True, we get newest first.
+
         # Fallback date uniquement si pas de min_id
         if cutoff_date and message.date < cutoff_date:
             break
