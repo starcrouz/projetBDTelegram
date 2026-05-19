@@ -70,12 +70,12 @@ INDEX_HTML = r"""
 :root {--card-w:180px}
 body {font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
 header {position:sticky;top:0;z-index:50;background:#0f172aee;backdrop-filter:blur(8px);
-  border-bottom:1px solid #1e293b;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  border-bottom:1px solid #1e293b;padding:6px 16px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 h1 {font-size:1.15rem;color:#60a5fa;flex:0 0 auto;white-space:nowrap; margin-right:10px;}
 .pills {display:flex;gap:6px;flex-wrap:wrap}
 .filters {display:flex;gap:5px; margin-left: 10px;}
 .fb {background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:4px 11px;
-  border-radius:20px;cursor:pointer;font-size:0.75rem;transition:all .2s}
+  border-radius:20px;cursor:pointer;font-size:0.75rem;transition:all .2s;white-space:nowrap;}
 .fb.active {background:#3b82f6;border-color:#3b82f6;color:#fff}
 .search-wrap {flex:1;min-width:140px;max-width:240px}
 #search {width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;
@@ -170,59 +170,74 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       </div>
   </div>
   
-  <div style="display:flex; gap: 20px; flex-wrap: wrap; background: #1e293b; padding: 10px; border-radius: 8px; align-items: stretch;">
+  <div style="display:flex; gap: 20px; flex-wrap: wrap; background: #1e293b; padding: 10px; border-radius: 8px; align-items: stretch;" id="header-4-zones">
       <!-- Catégorie: Bibliothèque Locale -->
-      <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
+      <div style="flex: 1; display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Bibliothèque Locale</h3>
           <div style="display:flex; gap:10px;">
-              <button class="btn" id="btn-pile" style="background:#f59e0b; color:white; border:none;" onclick="togglePileALire()">📚 Ma pile à lire</button>
-              <input type="text" id="local-search" placeholder="Recherche (Everywhere)..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px;" onkeydown="if(event.key==='Enter') executeLocalSearch()">
-              <button class="btn btn-primary" onclick="executeLocalSearch()" style="padding:6px 10px;">🔍</button>
+              <button class="btn" id="btn-pile" style="background:#f59e0b; color:white; border:none; white-space:nowrap;" onclick="togglePileALire()">📚 Ma pile à lire</button>
+              <input type="text" id="local-search" placeholder="Recherche (Everything)..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:100%;" onkeydown="if(event.key==='Enter') executeLocalSearch()">
+              <button class="btn btn-primary" id="btn-everything" onclick="executeLocalSearch()" style="padding:6px 10px;">🔍</button>
+              <button class="btn" id="btn-everything-back" onclick="goBack()" style="display:none; background:#64748b; color:white; border:none; padding:6px 10px;">🔙 Retour</button>
           </div>
       </div>
       
       <!-- Catégorie: Scan Telegram -->
-      <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
+      <div style="flex: 1; display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Scan Chronologique (Telegram)</h3>
           <div style="display:flex; gap:10px; align-items:center;">
-              <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()">🚀 Scanner Nouveautés</button>
-              <button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true, null)">⏩ Suivantes</button>
-              <div class="pill blue" id="current-date-pill" style="cursor:pointer; display:none;" onclick="document.getElementById('settings-modal').style.display='flex'"><b>Auto</b></div>
+              <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()" style="white-space:nowrap;">🚀 Scanner Nouveautés</button>
+              <button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="startDynamicScan(true, null)">⏩ Suivantes</button>
+              
           </div>
       </div>
       
       <!-- Catégorie: Recherche Telegram -->
-      <div style="display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
+      <div style="flex: 1; display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Recherche Spécifique (Telegram)</h3>
           <div style="display:flex; gap:10px;">
-              <input type="text" id="tg-search" placeholder="Titre de la BD..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:180px;" onkeydown="if(event.key==='Enter') startTgSearch()">
+              <input type="text" id="tg-search" placeholder="Titre de la BD..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:100%;" onkeydown="if(event.key==='Enter') startTgSearch()">
               <button class="btn btn-primary" onclick="startTgSearch()" style="padding:6px 10px;">🔍</button>
-              <button class="btn" id="btn-search-next" style="display:none; background:#8b5cf6; color:white; border:none;" onclick="startDynamicScan(true, currentSearchQuery)">⏩ Suivantes</button>
+              <button class="btn" id="btn-search-next" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="startDynamicScan(true, currentSearchQuery)">⏩ Suivantes</button>
           </div>
       </div>
       
       <!-- Catégorie: Téléchargements -->
-      <div style="display:flex; flex-direction:column; justify-content:center; gap:8px;">
-          <div class="pill yellow" id="global-dl-indicator" style="display:none; cursor:pointer; font-weight:bold; height: 100%; align-items:center; justify-content:center; padding: 0 15px;" onclick="document.getElementById('downloads-modal').style.display='flex'"></div>
+      <div style="flex: 1; display:flex; flex-direction:column; gap:8px;">
+          <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Téléchargements</h3>
+          <div style="display:flex; align-items:center; height:100%; cursor:pointer;" onclick="document.getElementById('downloads-modal').style.display='flex'">
+              <div id="global-dl-indicator" style="color:white; font-size:13px; line-height:1.4;">
+                  <span style="color:#64748b;">Aucun téléchargement</span>
+              </div>
+          </div>
       </div>
   </div>
   
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 5px;" id="scan-controls">
-      <div class="filters">
-        <button class="fb active" onclick="setFilter('ALL',this)">Tous</button>
-        <button class="fb" onclick="setFilter('NOUVEAU',this)">Nouveaux</button>
-        <button class="fb" onclick="setFilter('INCERTAIN',this)">Incertains</button>
-        <button class="fb" onclick="setFilter('DOUBLON',this)">Doublons</button>
-        <span id="scan-status" style="margin-left: 10px; font-size: 0.8rem; color: #38bdf8;">Prêt.</span>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 2px; gap: 20px;" id="scan-controls">
+      <!-- Bloc Gauche (1/3): Filtres et Statut -->
+      <div style="flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 10px;" id="filter-container">
+        <div class="filters" style="display:flex;">
+            <button class="fb active" data-f="ALL" onclick="toggleFilter('ALL')">Tous <span id="cnt-ALL"></span></button>
+            <button class="fb" data-f="NOUVEAU" onclick="toggleFilter('NOUVEAU')">Nouveaux <span id="cnt-NOUVEAU"></span></button>
+            <button class="fb" data-f="INCERTAIN" onclick="toggleFilter('INCERTAIN')">Incertains <span id="cnt-INCERTAIN"></span></button>
+            <button class="fb" data-f="DOUBLON" onclick="toggleFilter('DOUBLON')">Doublons <span id="cnt-DOUBLON"></span></button>
+        </div>
+        <span id="scan-status" style="font-size: 0.8rem; color: #38bdf8; white-space: nowrap;">Prêt.</span>
       </div>
-      <div class="search-wrap">
-        <input id="search" type="text" placeholder="🔍 Filtrer résultats affichés..." oninput="applyFilters()">
+      
+      <!-- Bloc Centre (1/3): Recherche et Zoom -->
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 15px;">
+          <div class="search-wrap" style="width: 100%; max-width: 300px;">
+            <input id="search" type="text" placeholder="🔍 Filtrer résultats affichés..." oninput="applyFilters()" style="width: 100%;">
+          </div>
+          <div class="zoom-wrap" style="white-space: nowrap;">🔍 <input type="range" id="zoom" min="130" max="320" value="180" oninput="setZoom(this.value)"></div>
       </div>
-      <div class="zoom-wrap">🔍 <input type="range" id="zoom" min="130" max="320" value="180" oninput="setZoom(this.value)"></div>
-      <div class="actions">
+      
+      <!-- Bloc Droite (1/3): Actions de sélection et téléchargement -->
+      <div style="flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 10px;" class="actions">
+        <span id="counter" style="white-space: nowrap; font-size: 0.9rem; color: #94a3b8;">0 visible / 0 sélec.</span>
         <button class="btn" onclick="selectAllVisible()">Tout cocher</button>
         <button class="btn" onclick="deselectAll()">Décocher</button>
-        <span id="counter">0 visible / 0 sélec.</span>
         <button id="export-btn" class="btn-download" disabled onclick="downloadSelection(false)">⬇️ Télécharger (0)</button>
       </div>
   </div>
@@ -231,6 +246,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
 <div id="grid" class="grid"></div>
 <div id="pile-grid" class="grid" style="display:none;"></div>
+<div id="everything-grid" style="display:none; flex-direction:column; gap:5px; margin: 20px;"></div>
 <div id="no-results">Aucun album pour ce filtre ou la galerie est vide.</div>
 
 <!-- Modal Config -->
@@ -494,10 +510,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     // Config initialisation
     fetch('/api/config').then(r=>r.json()).then(c => {
         if(c.start_date) {
-            document.getElementById('start_date').value = c.start_date;
-            document.getElementById('current-date-pill').innerHTML = `<b>${c.start_date}</b>`;
-        } else {
-            document.getElementById('current-date-pill').innerHTML = `<b>Auto</b>`;
+            let sDate = c.start_date;
+            if (sDate.includes('T')) sDate = sDate.split('T')[0];
+            else if (sDate.includes(' ')) sDate = sDate.split(' ')[0];
+            document.getElementById('start_date').value = sDate;
         }
         if(c.filename_filter) document.getElementById('filename_filter').value = c.filename_filter.join(', ');
         if(c.channels) document.getElementById('channels').value = c.channels.join(', ');
@@ -520,8 +536,6 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const maxGal = parseInt(document.getElementById('max_gallery_size').value) || 50;
         const threshDup = parseInt(document.getElementById('fuzzy_threshold_duplicate').value) || 85;
         const threshRev = parseInt(document.getElementById('fuzzy_threshold_review').value) || 50;
-        
-        document.getElementById('current-date-pill').innerHTML = date ? `<b>${date}</b>` : `<b>Auto</b>`;
         
         fetch('/api/config', {
             method: 'POST',
@@ -623,49 +637,72 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         }
     }
 
-    let isViewingPile = false;
+    let currentView = 'scan'; // 'scan', 'pile', 'everything'
+    let viewHistory = ['scan'];
     
-    function togglePileALire() {
-        if (isViewingPile) {
-            document.getElementById('pile-grid').style.display = 'none';
+    function switchView(view) {
+        if (currentView === view) return;
+        viewHistory.push(currentView);
+        currentView = view;
+        applyViewParams();
+    }
+    
+    function goBack() {
+        if (viewHistory.length > 0) {
+            currentView = viewHistory.pop();
+            applyViewParams();
+        } else {
+            currentView = 'scan';
+            applyViewParams();
+        }
+    }
+    
+    function applyViewParams() {
+        document.getElementById('grid').style.display = 'none';
+        document.getElementById('pile-grid').style.display = 'none';
+        document.getElementById('everything-grid').style.display = 'none';
+        document.getElementById('scan-controls').style.display = 'none';
+        
+        Array.from(document.getElementById('header-4-zones').children).forEach((el, i) => { if(i>0) el.style.opacity = '1'; el.style.pointerEvents = 'auto'; });
+        document.getElementById('btn-pile').innerHTML = "📚 Ma pile à lire";
+        document.getElementById('btn-pile').style.background = "#f59e0b";
+        document.getElementById('btn-everything').innerHTML = "🔍";
+        document.getElementById('btn-everything').style.background = "#3b82f6";
+        document.getElementById('btn-everything').style.display = "block";
+        document.getElementById('btn-everything-back').style.display = "none";
+        
+        if (currentView === 'scan') {
             document.getElementById('grid').style.display = 'grid';
             document.getElementById('scan-controls').style.display = 'flex';
-            document.getElementById('btn-pile').innerHTML = "📚 Ma pile à lire";
-            document.getElementById('btn-pile').style.background = "#f59e0b";
-            isViewingPile = false;
-        } else {
-            document.getElementById('grid').style.display = 'none';
-            document.getElementById('scan-controls').style.display = 'none';
-            const pGrid = document.getElementById('pile-grid');
-            pGrid.style.display = 'grid';
-            document.getElementById('btn-pile').innerHTML = "🔙 Retour au Scan";
+        } else if (currentView === 'pile') {
+            document.getElementById('pile-grid').style.display = 'grid';
+            document.getElementById('btn-pile').innerHTML = "🔙 Retour";
             document.getElementById('btn-pile').style.background = "#64748b";
-            isViewingPile = true;
-            
+            Array.from(document.getElementById('header-4-zones').children).forEach((el, i) => { if(i>0) { el.style.opacity = '0.3'; el.style.pointerEvents = 'none'; } });
+        } else if (currentView === 'everything') {
+            document.getElementById('everything-grid').style.display = 'flex';
+            document.getElementById('btn-everything').style.display = "none";
+            document.getElementById('btn-everything-back').style.display = "block";
+            Array.from(document.getElementById('header-4-zones').children).forEach((el, i) => { if(i>0) { el.style.opacity = '0.3'; el.style.pointerEvents = 'none'; } });
+        }
+    }
+    
+    function togglePileALire() {
+        if (currentView === 'pile') {
+            goBack();
+        } else {
+            switchView('pile');
+            const pGrid = document.getElementById('pile-grid');
             pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Chargement de la pile à lire...</h2>";
             document.getElementById('no-results').style.display = 'none';
-            
-            fetch('/api/list_to_read')
-            .then(r=>r.json())
-            .then(items => {
-                if (!items || items.length === 0) {
-                    pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>";
-                    return;
-                }
-                
+            fetch('/api/list_to_read').then(r=>r.json()).then(items => {
+                if (!items || items.length === 0) { pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>"; return; }
                 pGrid.innerHTML = items.map(d => {
                     const cleanName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
                     const imgH = `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
                     const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
                     const ext = extMatch ? extMatch[1].toUpperCase() : '';
-                    
-                    return `<div class="card" style="cursor:default;">
-                      ${imgH}
-                      <div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\\'")}')" title="Retirer de la pile à lire">📌</div>
-                      <div class="card-info" style="margin-top:auto;">
-                        <div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
-                      </div>
-                    </div>`;
+                    return `<div class="card" style="cursor:default;">${imgH}<div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\'")}')" title="Retirer de la pile à lire">📌</div><div class="card-info" style="margin-top:auto;"><div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div></div></div>`;
                 }).join('');
             });
         }
@@ -678,7 +715,8 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({filename: filename})
         }).then(() => {
-            isViewingPile = false;
+            // refresh pile
+            currentView = 'scan';
             togglePileALire();
         });
     }
@@ -687,38 +725,37 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const query = document.getElementById('local-search').value.trim();
         if(!query) return;
         
-        document.getElementById('pile-grid').style.display = 'none';
-        document.getElementById('grid').style.display = 'grid';
-        document.getElementById('scan-controls').style.display = 'none';
-        document.getElementById('btn-pile').innerHTML = "📚 Ma pile à lire";
-        document.getElementById('btn-pile').style.background = "#f59e0b";
-        isViewingPile = false;
-        
-        grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Recherche locale en cours...</h2>";
+        switchView('everything');
+        const eGrid = document.getElementById('everything-grid');
+        eGrid.innerHTML = "<h2 style='color: white;'>Recherche locale en cours...</h2>";
         
         try {
             const res = await fetch(`/api/everything?q=${encodeURIComponent(query)}&original=`);
             const results = await res.json();
             
             if (results.length === 0) {
-                grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>Aucun résultat local trouvé.</h2>";
+                eGrid.innerHTML = "<h2 style='color: white;'>Aucun résultat local trouvé.</h2>";
                 return;
             }
             
-            grid.innerHTML = '<h2 style="grid-column: 1 / -1; color: white; font-size: 1.1rem; margin-bottom: 10px;">Résultats Everything (' + results.length + ') :</h2>' + results.map(r => {
+            eGrid.innerHTML = '<h2 style="color: white; font-size: 1.1rem; margin-bottom: 10px;">Résultats Everything (' + results.length + ') :</h2>' + results.map(r => {
                 const extMatch = r.filename.match(/\.([a-z0-9]+)$/i);
                 const ext = extMatch ? extMatch[1].toUpperCase() : '';
-                return `<div class="card" style="cursor:default; height: auto;">
-                  <div class="cover" style="display:flex;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a; aspect-ratio:3/4;">${r.filename[0].toUpperCase()}</div>
-                  <div class="card-info" style="margin-top:auto;">
-                    <div class="card-title">${r.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'')} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
-                    <div class="card-meta" style="word-break: break-all; font-size: 10px;">${r.path}</div>
+                const titleHtml = `<span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal; margin-right:4px;">${ext}</span>${r.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'')}`;
+                const sizeStr = (r.size / 1024 / 1024).toFixed(1) + ' Mo';
+                
+                return `<div style="display:flex; align-items:center; background:#1e293b; padding:10px 15px; border-radius:6px; border-left: 4px solid #3b82f6; gap: 15px;">
+                  <div style="flex:1;">
+                      <div style="font-weight:bold; color:white; font-size:14px; display:flex; align-items:center;">${titleHtml}</div>
+                      <div style="color:#94a3b8; font-size:11px; margin-top:2px; word-break: break-all;">${r.path}</div>
                   </div>
+                  <div style="color:#94a3b8; font-size:12px; min-width: 60px; text-align:right;">${sizeStr}</div>
+                  <div style="color:#64748b; font-size:12px; min-width: 80px; text-align:right;">Fichier local</div>
                 </div>`;
             }).join('');
             
         } catch(e) {
-            grid.innerHTML = "<h2 style='grid-column: 1 / -1; color: #ef4444;'>Erreur lors de la recherche Everything.</h2>";
+            eGrid.innerHTML = "<h2 style='color: #ef4444;'>Erreur lors de la recherche Everything.</h2>";
         }
     }
 
@@ -731,9 +768,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }
 
     function startDynamicScan(continueFromLast = false, searchQuery = null) {
-        document.getElementById('pile-grid').style.display = 'none';
-        document.getElementById('grid').style.display = 'grid';
-        document.getElementById('scan-controls').style.display = 'flex';
+        currentView = 'scan';
+        viewHistory = [];
+        applyViewParams();
         
         if (!continueFromLast) {
             grid.innerHTML = "";
@@ -744,9 +781,22 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         selected.clear();
         document.getElementById('btn-scan-next').style.display = 'none'; document.getElementById('btn-search-next').style.display = 'none';
         
-        if (continueFromLast && lastScanDate) {
-            document.getElementById('current-date-pill').style.display = 'block';
-            document.getElementById('current-date-pill').innerHTML = `<b>${lastScanDate.substring(0, 10)}</b>`;
+        if (continueFromLast && lastScanDate && !searchQuery) {
+            const titleDate = document.getElementById('title-scan-date');
+            let dateOnly = lastScanDate;
+            if (lastScanDate.includes('T')) {
+                dateOnly = lastScanDate.split('T')[0];
+            } else if (lastScanDate.includes(' ')) {
+                dateOnly = lastScanDate.split(' ')[0];
+            }
+            if (titleDate) {
+                titleDate.innerText = '[' + dateOnly + ']';
+            }
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({start_date: lastScanDate})
+            });
         }
         
         updateCounter();
@@ -774,7 +824,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             if (msg.type === "info") {
                 statusDiv.innerText = msg.message;
             } else if (msg.type === "done") {
-                statusDiv.innerText = "✅ " + msg.message;
+                const parts = msg.message.split('parmi ');
+                statusDiv.innerText = parts.length > 1 ? "Terminé ! " + parts[1] : msg.message;
+                statusDiv.style.color = "#4ade80";
                 btnScan.disabled = false;
                 if (msg.last_date) {
                     lastScanDate = msg.last_date;
@@ -798,24 +850,50 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }
 
     /* Rendu et filtres */
+    let activeFilters = new Set(['ALL']);
+    
     function applyFilters() {
       const q = document.getElementById('search').value.toLowerCase();
       const filtered = DATA.filter(d => {
-        if (currentFilter!=='ALL' && d.status!==currentFilter) return false;
+        if (!activeFilters.has('ALL') && !activeFilters.has(d.status)) return false;
         if (q && !d.filename.toLowerCase().includes(q)) return false;
         return true;
       });
       renderGrid(filtered);
     }
 
-    function setFilter(f,btn) {
-      currentFilter=f;
-      document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilters();
+    function toggleFilter(f) {
+        if (f === 'ALL') {
+            activeFilters.clear();
+            activeFilters.add('ALL');
+        } else {
+            activeFilters.delete('ALL');
+            if (activeFilters.has(f)) {
+                activeFilters.delete(f);
+                if (activeFilters.size === 0) activeFilters.add('ALL');
+            } else {
+                activeFilters.add(f);
+            }
+        }
+        
+        document.querySelectorAll('.fb').forEach(b => {
+            if (activeFilters.has(b.dataset.f)) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+        applyFilters();
+    }
+    
+    function updateFilterCounts() {
+        const counts = {'ALL': DATA.length, 'NOUVEAU': 0, 'INCERTAIN': 0, 'DOUBLON': 0};
+        DATA.forEach(d => { if(counts[d.status] !== undefined) counts[d.status]++; });
+        document.getElementById('cnt-ALL').innerText = `(${counts['ALL']})`;
+        document.getElementById('cnt-NOUVEAU').innerText = `(${counts['NOUVEAU']})`;
+        document.getElementById('cnt-INCERTAIN').innerText = `(${counts['INCERTAIN']})`;
+        document.getElementById('cnt-DOUBLON').innerText = `(${counts['DOUBLON']})`;
     }
 
     function renderGrid(items) {
+      updateFilterCounts();
       const nr = document.getElementById('no-results');
       if (!items.length) { grid.innerHTML=''; nr.style.display='block'; updateCounter(0); return; }
       nr.style.display = 'none';
@@ -824,13 +902,15 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const isSel = selected.has(d.message_id);
         const displayName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
         const cleanName = displayName;
-        const safeOriginal = d.filename.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-        const safeClean = cleanName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeOriginal = d.filename.replace(/'/g, "\'").replace(/"/g, "&quot;");
+        const safeClean = cleanName.replace(/'/g, "\'").replace(/"/g, "&quot;");
         const safeResults = encodeURIComponent(JSON.stringify(d.everything_results||[])).replace(/'/g, "%27");
         const color = COLORS[d.filename.charCodeAt(0) % COLORS.length];
         const isPinned = toReadList.has(d.filename);
+        
         const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
         const ext = extMatch ? extMatch[1].toUpperCase() : '';
+        const titleHtml = `<span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal; margin-right:4px;">${ext}</span>${cleanName}`;
         
         const imgH  = d.thumb_url
           ? `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:linear-gradient(135deg,${color}44,#0f172a)">${d.filename[0].toUpperCase()}</div>`
@@ -845,8 +925,8 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           <div class="pin-link ${isPinned ? 'pinned' : ''}" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="${isPinned ? 'Retirer de la pile à lire' : 'Ajouter à la pile à lire'}">📌</div>
 
           <div class="card-info">
-            <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()">${displayName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div>
-            <div class="card-meta">${d.channel_name}<br>${d.date} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
+            <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()" style="display:flex; align-items:center;">${titleHtml}</div>
+            <div class="card-meta">${d.channel_name}<br>${d.date.split(' ')[0]} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
             <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${safeClean}', '${safeResults}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
             <div class="progress-container" id="dl-container-${d.message_id}">
                 <div class="progress-bar" id="dl-progress-${d.message_id}"></div>
@@ -1032,7 +1112,20 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
 @app.get("/")
 async def get_index():
-    return HTMLResponse(INDEX_HTML)
+    config_path = os.path.join(PROJECT_DIR, "config.json")
+    start_date = ""
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            try:
+                config = json.load(f)
+                start_date = config.get("start_date", "")
+            except:
+                pass
+                
+    html = INDEX_HTML
+    display_date = f"[{start_date.split(' ')[0].split('T')[0]}]" if start_date else ""
+    html = html.replace("Scan Chronologique (Telegram)", f"Scan Chronologique (Telegram) <span id='title-scan-date' style='color:#60a5fa;'>{display_date}</span>")
+    return HTMLResponse(html)
 
 @app.get("/api/config")
 async def get_config():
@@ -1103,7 +1196,7 @@ async def manual_everything_search(q: str, original: str):
         
     final_query = f"{path_filter}{q} {ext_filter}"
     
-    url = f"{everything_url}/?search={urllib.parse.quote(final_query)}&json=1&count=50&path_column=1"
+    url = f"{everything_url}/?search={urllib.parse.quote(final_query)}&json=1&count=50&path_column=1&size_column=1"
     
     try:
         req = urllib.request.urlopen(url, timeout=5)
@@ -1114,10 +1207,16 @@ async def manual_everything_search(q: str, original: str):
         for r in results:
             name = r.get('name', '')
             path = r.get('path', '')
+            size = r.get('size', '0')
+            try:
+                size_int = int(size)
+            except:
+                size_int = 0
             score = fuzzy_score(original, name)
             scored.append({
                 'filename': name,
                 'path': path,
+                'size': size_int,
                 'score': score
             })
             
@@ -1190,9 +1289,14 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
     if start_date_str:
         from datetime import datetime, timezone
         try:
-            start_date_dt = datetime.strptime(start_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            start_date_dt = datetime.fromisoformat(start_date_str)
+            if start_date_dt.tzinfo is None:
+                start_date_dt = start_date_dt.replace(tzinfo=timezone.utc)
         except Exception:
-            pass
+            try:
+                start_date_dt = datetime.strptime(start_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except Exception:
+                pass
 
     from telegram_scraper import SUPPORTED_EXTENSIONS, _extract_filename_and_ext
     from everything_checker import search_by_keywords
@@ -1226,7 +1330,8 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
                 kwargs = {'reverse': True}
                 if continue_date:
                     from datetime import datetime
-                    kwargs["offset_date"] = datetime.fromisoformat(continue_date)
+                    from datetime import timedelta
+                    kwargs["offset_date"] = datetime.fromisoformat(continue_date) - timedelta(seconds=2)
                 elif start_date_dt:
                     kwargs['offset_date'] = start_date_dt
                 else:
@@ -1262,14 +1367,17 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
                         if same_group or (0 <= message.id - last_photo.id <= 5):
                             cover = last_photo
                     
-                    if search_query and cover is None:
-                        context_msgs = await telegram_client.get_messages(entity, limit=5, max_id=message.id)
-                        for c_msg in context_msgs:
-                            if c_msg.photo:
-                                same_group = (message.grouped_id and message.grouped_id == c_msg.grouped_id)
-                                if same_group or (0 <= message.id - c_msg.id <= 5):
-                                    cover = c_msg
-                                    break
+                    if cover is None:
+                        try:
+                            context_msgs = await telegram_client.get_messages(entity, limit=4, offset_id=message.id, add_offset=-2)
+                            for c_msg in context_msgs:
+                                if c_msg.photo:
+                                    same_group = (message.grouped_id and message.grouped_id == c_msg.grouped_id)
+                                    if same_group or abs(message.id - c_msg.id) <= 5:
+                                        cover = c_msg
+                                        break
+                        except Exception:
+                            pass
                                     
                     last_photo = None
                     
