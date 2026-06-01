@@ -1,7 +1,4 @@
 @echo off
-:: run.bat — Lance le script avec le venv
-:: Double-cliquer sur ce fichier ou l'appeler depuis une invite de commandes
-
+:: run.bat — Redirige vers l'interface Web
 cd /d "%~dp0"
-call venv\Scripts\activate.bat
-python main.py %*
+call run_web.bat

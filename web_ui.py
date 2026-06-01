@@ -87,13 +87,14 @@ h1 {font-size:1.15rem;color:#60a5fa;flex:0 0 auto;white-space:nowrap; margin-rig
 #counter {font-size:0.72rem;color:#64748b;white-space:nowrap}
 .btn {background:#1e293b;border:1px solid #334155;color:#94a3b8;padding:4px 10px;
   border-radius:6px;cursor:pointer;font-size:0.75rem;transition:all .2s;white-space:nowrap}
-.btn:hover {border-color:#3b82f6;color:#60a5fa;}
+.btn:hover:not(:disabled) {border-color:#3b82f6;color:#60a5fa;}
+.btn:disabled {opacity:0.5; cursor:not-allowed;}
 .btn-primary { background:#3b82f6; color:white; border-color:#2563eb; font-weight:bold; }
-.btn-primary:hover { background:#2563eb; color:white; }
+.btn-primary:hover:not(:disabled) { background:#2563eb; color:white; }
 .btn-download {background:#8b5cf6;border:none;color:#fff;padding:5px 14px;
   border-radius:8px;cursor:pointer;font-weight:700;font-size:0.82rem;transition:background .2s;white-space:nowrap}
-.btn-download:hover {background:#7c3aed}
-.btn-download:disabled {background:#374151;color:#6b7280;cursor:not-allowed}
+.btn-download:hover:not(:disabled) {background:#7c3aed}
+.btn-download:disabled {opacity:0.5; cursor:not-allowed}
 
 /* Grid & Cards */
 .grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));gap:12px;padding:16px}
@@ -186,9 +187,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       <div style="flex: 1; display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Scan Chronologique (Telegram)</h3>
           <div style="display:flex; gap:10px; align-items:center;">
-              <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()" style="white-space:nowrap;">🚀 Scanner Nouveautés</button>
+              <button class="btn" id="btn-scan-prev" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="goPreviousPage()">⏪ Précédentes</button>
+              <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()" style="white-space:nowrap;">🚀 Scanner</button>
               <button class="btn" id="btn-scan-next" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="startDynamicScan(true, null)">⏩ Suivantes</button>
-              
+              <button class="btn" id="btn-scan-stop" style="display:none; background:#ef4444; color:white; border:none; white-space:nowrap;" onclick="stopScan()">🛑 Arrêter</button>
           </div>
       </div>
       
@@ -197,17 +199,21 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Recherche Spécifique (Telegram)</h3>
           <div style="display:flex; gap:10px;">
               <input type="text" id="tg-search" placeholder="Titre de la BD..." style="padding:6px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:13px; width:100%;" onkeydown="if(event.key==='Enter') startTgSearch()">
-              <button class="btn btn-primary" onclick="startTgSearch()" style="padding:6px 10px;">🔍</button>
+              <button class="btn" id="btn-search-prev" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="goPreviousPage()">⏪ Précédentes</button>
+              <button class="btn btn-primary" id="btn-search-main" onclick="startTgSearch()" style="padding:6px 10px;">🔍</button>
               <button class="btn" id="btn-search-next" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="startDynamicScan(true, currentSearchQuery)">⏩ Suivantes</button>
+              <button class="btn" id="btn-search-stop" style="display:none; background:#ef4444; color:white; border:none; white-space:nowrap;" onclick="stopScan()">🛑 Arrêter</button>
           </div>
       </div>
       
       <!-- Catégorie: Téléchargements -->
       <div style="flex: 1; display:flex; flex-direction:column; gap:8px;">
           <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Téléchargements</h3>
-          <div style="display:flex; align-items:center; height:100%; cursor:pointer;" onclick="document.getElementById('downloads-modal').style.display='flex'">
-              <div id="global-dl-indicator" style="color:white; font-size:13px; line-height:1.4;">
-                  <span style="color:#64748b;">Aucun téléchargement</span>
+          <div style="display:flex; flex-direction:column; gap:4px; height:100%;">
+              <div id="queue-indicator" style="color:white; font-size:13px; line-height:1.4; cursor:pointer;" onclick="document.getElementById('downloads-modal').style.display='flex'; renderDownloadsModal();">
+                  <span style="color:#64748b;">🛒 À télécharger vide</span>
+              </div>
+              <div id="global-dl-indicator" style="color:white; font-size:13px; line-height:1.4; cursor:pointer; display:none;" onclick="document.getElementById('downloads-modal').style.display='flex'; renderDownloadsModal();">
               </div>
           </div>
       </div>
@@ -238,7 +244,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         <span id="counter" style="white-space: nowrap; font-size: 0.9rem; color: #94a3b8;">0 visible / 0 sélec.</span>
         <button class="btn" onclick="selectAllVisible()">Tout cocher</button>
         <button class="btn" onclick="deselectAll()">Décocher</button>
-        <button id="export-btn" class="btn-download" disabled onclick="downloadSelection(false)">⬇️ Télécharger (0)</button>
+        <button id="export-btn" class="btn-download" disabled onclick="addToQueueFromSelection()">📥 Panier (0)</button>
       </div>
   </div>
 </header>
@@ -322,16 +328,35 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
 <!-- Modal Downloads -->
 <div class="modal-overlay" id="downloads-modal" onclick="closeModal('downloads-modal')">
-    <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:800px;">
         <div class="modal-hdr">
-            <h2>⏳ Téléchargements en cours <span id="dl-speed" style="font-size:0.8rem; color:#94a3b8; font-weight:normal;"></span></h2>
-            <div>
-                <button class="btn" style="background:#ef4444; color:white; border:none;" onclick="cancelAllDownloads()">Tout Annuler</button>
-                <button class="modal-close" onclick="closeModal('downloads-modal')">&times;</button>
-            </div>
+            <h2>📥 Gestion des Téléchargements</h2>
+            <button class="modal-close" onclick="closeModal('downloads-modal')">&times;</button>
         </div>
-        <div id="downloads-list" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-            <div class="help-text">Aucun téléchargement en cours.</div>
+        <div style="display:flex; gap:20px; height:450px;">
+            <!-- Colonne Panier -->
+            <div style="flex:1; display:flex; flex-direction:column; border-right:1px solid #334155; padding-right:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="font-size:14px; color:#38bdf8; margin:0;">🛒 À télécharger (<span id="modal-queue-count">0</span>)</h3>
+                    <div>
+                        <button id="btn-clear-queue" class="btn" style="background:#ef4444; color:white; border:none; padding:4px 8px; margin-right:5px; display:none;" onclick="clearQueue()">🗑️ Vider</button>
+                        <button id="btn-start-queue" class="btn" style="background:#22c55e; color:white; border:none; padding:4px 8px; display:none;" onclick="startQueuedDownloads()">🚀 Lancer Tout</button>
+                    </div>
+                </div>
+                <div id="queue-list" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+                    <div class="help-text">Le panier est vide.</div>
+                </div>
+            </div>
+            <!-- Colonne En Cours -->
+            <div style="flex:1; display:flex; flex-direction:column; padding-left:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="font-size:14px; color:#38bdf8; margin:0;">⏳ En cours / Terminés <span id="dl-speed" style="font-size:0.8rem; color:#94a3b8; font-weight:normal;"></span></h3>
+                    <button class="btn" style="background:#ef4444; color:white; border:none; padding:4px 8px;" onclick="cancelAllDownloads()">Annuler actifs</button>
+                </div>
+                <div id="downloads-list" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+                    <div class="help-text">Aucun téléchargement en cours.</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -353,16 +378,147 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
     let activeDownloadsCount = 0;
     let downloadsState = {};
+    let downloadQueue = [];
+    let scanHistory = [];
     let lastScanDate = null;
     let lastTotalBytes = 0;
     let currentSearchQuery = null;
     let searchSkipCount = 0;
+    let currentWebSocket = null;
     
-    // Add onclick to indicator
-    document.getElementById('global-dl-indicator').onclick = function() {
-        renderDownloadsModal();
-        document.getElementById('downloads-modal').style.display='flex';
-    };
+    function customConfirm(msg, showSaveOption = false) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0'; overlay.style.left = '0';
+            overlay.style.width = '100vw'; overlay.style.height = '100vh';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            overlay.style.zIndex = '10000';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            
+            const box = document.createElement('div');
+            box.style.background = '#1e293b';
+            box.style.border = '1px solid #475569';
+            box.style.borderRadius = '8px';
+            box.style.padding = '25px';
+            box.style.maxWidth = '450px';
+            box.style.color = 'white';
+            box.style.textAlign = 'center';
+            box.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+            
+            const text = document.createElement('div');
+            text.innerHTML = msg.replace(/\n/g, '<br>');
+            text.style.marginBottom = '25px';
+            text.style.lineHeight = '1.5';
+            text.style.fontSize = '1.1rem';
+            
+            const btnWrap = document.createElement('div');
+            btnWrap.style.display = 'flex';
+            btnWrap.style.gap = '15px';
+            btnWrap.style.justifyContent = 'center';
+            btnWrap.style.flexDirection = showSaveOption ? 'column' : 'row';
+            
+            if (showSaveOption) {
+                const btnSave = document.createElement('button');
+                btnSave.className = 'btn';
+                btnSave.style.background = '#22c55e';
+                btnSave.style.color = 'white';
+                btnSave.style.border = 'none';
+                btnSave.style.padding = '10px 15px';
+                btnSave.style.fontWeight = 'bold';
+                btnSave.innerText = '✅ Valider et ajouter à la liste des téléchargements';
+                btnSave.onclick = () => { document.body.removeChild(overlay); resolve('save'); };
+                btnWrap.appendChild(btnSave);
+            }
+            
+            const subWrap = document.createElement('div');
+            subWrap.style.display = 'flex';
+            subWrap.style.gap = '15px';
+            subWrap.style.justifyContent = 'center';
+            
+            const btnOk = document.createElement('button');
+            btnOk.className = 'btn';
+            btnOk.style.background = '#ef4444';
+            btnOk.style.color = 'white';
+            btnOk.style.border = 'none';
+            btnOk.innerText = showSaveOption ? 'Continuer sans garder' : 'Oui, continuer';
+            btnOk.onclick = () => { document.body.removeChild(overlay); resolve('continue'); };
+            
+            const btnCancel = document.createElement('button');
+            btnCancel.className = 'btn';
+            btnCancel.style.background = '#64748b';
+            btnCancel.style.color = 'white';
+            btnCancel.style.border = 'none';
+            btnCancel.innerText = 'Annuler';
+            btnCancel.onclick = () => { document.body.removeChild(overlay); resolve('cancel'); };
+            
+            subWrap.appendChild(btnCancel);
+            subWrap.appendChild(btnOk);
+            btnWrap.appendChild(subWrap);
+            box.appendChild(text);
+            box.appendChild(btnWrap);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+        });
+    }
+
+    function updateQueueIndicator() {
+        const ind = document.getElementById('queue-indicator');
+        const count = document.getElementById('modal-queue-count');
+        const btnStart = document.getElementById('btn-start-queue');
+        const btnClear = document.getElementById('btn-clear-queue');
+        
+        if (downloadQueue.length > 0) {
+            ind.innerHTML = `🛒 <b style="color:#38bdf8;">${downloadQueue.length} BD</b> en attente`;
+            ind.style.display = 'block';
+            if(count) count.innerText = downloadQueue.length;
+            if(btnStart) btnStart.style.display = 'inline-block';
+            if(btnClear) btnClear.style.display = 'inline-block';
+        } else {
+            ind.innerHTML = `<span style="color:#64748b;">🛒 À télécharger vide</span>`;
+            if(count) count.innerText = "0";
+            if(btnStart) btnStart.style.display = 'none';
+            if(btnClear) btnClear.style.display = 'none';
+        }
+        if(document.getElementById('downloads-modal').style.display === 'flex') {
+            renderQueueList();
+        }
+    }
+    
+    function clearSelection() {
+        selected.forEach(id => {
+            const item = DATA.find(d => d.message_id === id);
+            if (item && toReadList.has(item.filename) && !downloadQueue.some(q => q.message_id === id)) {
+                toReadList.delete(item.filename);
+                const btn = document.getElementById('btn-read-' + id);
+                if (btn) btn.classList.remove('pinned');
+            }
+        });
+        selected.clear();
+    }
+
+    function clearQueue() {
+        downloadQueue.forEach(q => {
+            if (q.to_read && toReadList.has(q.filename)) {
+                toReadList.delete(q.filename);
+            }
+        });
+        downloadQueue = [];
+        updateQueueIndicator();
+        renderQueueList();
+        renderGrid(DATA);
+    }
+
+    function setNavigationDisabled(disabled) {
+        document.getElementById('btn-scan').disabled = disabled;
+        document.getElementById('btn-search-main').disabled = disabled;
+        document.getElementById('btn-scan-prev').disabled = disabled;
+        document.getElementById('btn-scan-next').disabled = disabled;
+        document.getElementById('btn-search-prev').disabled = disabled;
+        document.getElementById('btn-search-next').disabled = disabled;
+    }
     
     // Speed tracking
     setInterval(() => {
@@ -393,6 +549,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }, 1000);
 
     function renderDownloadsModal() {
+        renderQueueList();
         const list = document.getElementById('downloads-list');
         list.innerHTML = '';
         const keys = Object.keys(downloadsState);
@@ -416,26 +573,69 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             
             info.innerHTML = `
                 <div style="font-weight:bold; margin-bottom:4px; color:#e2e8f0;">${d.filename}</div>
-                <div style="color:#94a3b8; font-size:11px;">Statut : <span style="color:#38bdf8">${d.status}</span> ${progText}</div>
+                <div style="color:${d.status.startsWith('Erreur') ? '#ef4444' : '#94a3b8'}; font-size:11px;">Statut : <span style="color:${d.status.startsWith('Erreur') ? '#ef4444' : '#38bdf8'}">${d.status}</span> ${progText}</div>
                 <div style="width:100%; background:#1e293b; height:4px; border-radius:2px; margin-top:4px;">
-                    <div style="width:${progWidth}; background:#38bdf8; height:100%; border-radius:2px; transition:width 0.2s;"></div>
+                    <div style="width:${progWidth}; background:${d.status.startsWith('Erreur') ? '#ef4444' : '#38bdf8'}; height:100%; border-radius:2px; transition:width 0.2s;"></div>
                 </div>
             `;
             
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.style.cssText = 'background:#ef4444; color:white; border:none; margin-left:15px; padding:4px 8px; cursor:pointer;';
-            btn.innerText = '✕';
-            btn.onclick = () => cancelDownload(id);
+            const btnWrap = document.createElement('div');
+            btnWrap.style.display = 'flex';
+            btnWrap.style.gap = '5px';
+            btnWrap.style.marginLeft = '15px';
+
+            const btnCancel = document.createElement('button');
+            btnCancel.className = 'btn';
+            btnCancel.style.cssText = 'background:#ef4444; color:white; border:none; padding:4px 8px; cursor:pointer; font-size: 11px;';
+            btnCancel.innerText = '✕';
+            btnCancel.onclick = () => {
+                if (d.status.startsWith('Erreur') || d.status === 'Terminé ✅' || d.status.startsWith('Annulé')) {
+                    delete downloadsState[id];
+                    renderDownloadsModal();
+                } else {
+                    cancelDownload(id);
+                }
+            };
             
-            if(d.status === 'Terminé ✅' || d.status.startsWith('Erreur') || d.status.startsWith('Annulé')) {
-                btn.style.display = 'none';
+            if(d.status === 'Terminé ✅' || d.status.startsWith('Annulé')) {
+                btnCancel.style.display = 'none';
+            } else if (d.status.startsWith('Erreur')) {
+                const btnRetry = document.createElement('button');
+                btnRetry.className = 'btn';
+                btnRetry.style.cssText = 'background:#f59e0b; color:white; border:none; padding:4px 8px; cursor:pointer; font-size: 11px;';
+                btnRetry.innerText = '🔄';
+                btnRetry.title = 'Recommencer';
+                btnRetry.onclick = () => retryDownload(id);
+                btnWrap.appendChild(btnRetry);
+                btnCancel.title = 'Effacer';
             }
             
+            btnWrap.appendChild(btnCancel);
+            
             div.appendChild(info);
-            div.appendChild(btn);
+            div.appendChild(btnWrap);
             list.appendChild(div);
         });
+    }
+
+    function retryDownload(id) {
+        const d = downloadsState[id];
+        if(!d) return;
+        d.status = 'En file d\'attente...';
+        d.current = 0;
+        d.total = 0;
+        if(dlSocket && dlSocket.readyState === WebSocket.OPEN) {
+            activeDownloadsCount++;
+            updateGlobalDownloadIndicator();
+            dlSocket.send(JSON.stringify({
+                action: "download",
+                message_id: parseInt(id),
+                channel: d.channel,
+                filename: d.filename,
+                to_read: d.to_read || false
+            }));
+        }
+        renderDownloadsModal();
     }
 
     function cancelDownload(id) {
@@ -467,8 +667,15 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                     activeDownloadsCount--;
                     if(activeDownloadsCount < 0) activeDownloadsCount = 0;
                     updateGlobalDownloadIndicator();
-                    // Clean up state after 10 seconds if done to prevent memory leak
-                    setTimeout(() => { delete downloadsState[msg.message_id]; if(document.getElementById('downloads-modal').style.display === 'flex') renderDownloadsModal(); }, 10000);
+                    if (!msg.status.startsWith("Erreur")) {
+                        // Clean up state after 10 seconds if done to prevent memory leak
+                        setTimeout(() => { 
+                            if(downloadsState[msg.message_id] && !downloadsState[msg.message_id].status.startsWith("Erreur")) {
+                                delete downloadsState[msg.message_id]; 
+                                if(document.getElementById('downloads-modal').style.display === 'flex') renderDownloadsModal();
+                            }
+                        }, 10000);
+                    }
                     
                     // Hide progress bar on the card
                     const container = document.getElementById(`dl-container-${msg.message_id}`);
@@ -537,6 +744,11 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const threshDup = parseInt(document.getElementById('fuzzy_threshold_duplicate').value) || 85;
         const threshRev = parseInt(document.getElementById('fuzzy_threshold_review').value) || 50;
         
+        const titleDate = document.getElementById('title-scan-date');
+        if (titleDate && date) {
+            titleDate.innerText = '[' + date + ']';
+        }
+        
         fetch('/api/config', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -569,7 +781,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     function bdtUrl(filename) {
       var title = extractTitle(filename);
       if (!title || title.length < 2) return null;
-      return 'https://www.google.com/search?q=site%3Abedetheque.com+' + encodeURIComponent(title) + '&btnI=1';
+      return 'https://duckduckgo.com/?q=' + encodeURIComponent('!lucky site:bedetheque.com ' + title);
     }
     function closeModal(id) { document.getElementById(id).style.display='none'; }
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') { closeModal('settings-modal'); closeModal('search-modal'); } });
@@ -579,20 +791,18 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     
     
     function addDownloadTask(msg_id, channel, filename, toRead) {
-        if (!dlSocket || dlSocket.readyState !== WebSocket.OPEN) {
-            alert("Erreur: WebSocket de téléchargement non connecté.");
-            return;
+        if (!downloadQueue.find(q => q.message_id === msg_id)) {
+            downloadQueue.push({
+                message_id: msg_id,
+                channel: channel,
+                filename: filename,
+                to_read: toRead
+            });
+        } else {
+            const item = downloadQueue.find(q => q.message_id === msg_id);
+            if (toRead) item.to_read = true;
         }
-        activeDownloadsCount++;
-        updateGlobalDownloadIndicator();
-        downloadsState[msg_id] = {filename: filename, status: 'En file d\'attente...', current:0, total:0};
-        dlSocket.send(JSON.stringify({
-            action: "download",
-            message_id: msg_id,
-            channel: channel,
-            filename: filename,
-            to_read: toRead
-        }));
+        updateQueueIndicator();
     }
 
     function addToRead(msg_id, status, filename, channel) {
@@ -607,6 +817,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({filename: filename})
             });
+            const qItem = downloadQueue.find(q => q.message_id === msg_id);
+            if (qItem) {
+                qItem.to_read = false;
+            }
             return;
         }
         
@@ -633,7 +847,16 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         } else {
             if(btn) { btn.classList.add('pinned'); btn.title = 'Retirer de la pile à lire'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
             toReadList.add(filename);
-            addDownloadTask(msg_id, channel, filename, true);
+            
+            const qItem = downloadQueue.find(q => q.message_id === msg_id);
+            if (qItem) {
+                qItem.to_read = true;
+            } else if (!selected.has(msg_id)) {
+                selected.add(msg_id);
+                updateCounter(DATA.length);
+                const card = document.querySelector(`.card[data-id="${msg_id}"]`);
+                if (card) card.classList.add('selected');
+            }
         }
     }
 
@@ -759,27 +982,106 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         }
     }
 
-    function startTgSearch() {
+    async function startTgSearch() {
         const q = document.getElementById('tg-search').value.trim();
         if(!q) return;
+        if (selected.size > 0) {
+            const confirmed = await customConfirm("Vous avez " + selected.size + " BD sélectionnée(s) qui n'ont pas été ajoutées au panier.\nVoulez-vous vraiment lancer la recherche et perdre cette sélection ?", true);
+            if (confirmed === 'cancel') return;
+            if (confirmed === 'save') {
+                addToQueueFromSelection();
+            } else {
+                clearSelection();
+            }
+        }
         currentSearchQuery = q;
         searchSkipCount = 0;
         startDynamicScan(false, q);
     }
 
-    function startDynamicScan(continueFromLast = false, searchQuery = null) {
+    async function goPreviousPage() {
+        if (scanHistory.length < 2) return;
+        if (selected.size > 0) {
+            const confirmed = await customConfirm("Vous avez " + selected.size + " BD sélectionnée(s) qui n'ont pas été ajoutées au panier.\nVoulez-vous vraiment changer de page et perdre cette sélection ?", true);
+            if (confirmed === 'cancel') return;
+            if (confirmed === 'save') {
+                addToQueueFromSelection();
+            } else {
+                clearSelection();
+            }
+        }
+        scanHistory.pop(); // Remove current page state
+        const prev = scanHistory.pop(); // Get previous page state
+        startDynamicScan(false, null, prev);
+    }
+
+    function stopScan() {
+        if (currentWebSocket) {
+            currentWebSocket.close();
+            currentWebSocket = null;
+        }
+        statusDiv.innerText = "Scan arrêté manuellement.";
+        statusDiv.style.color = "#f59e0b";
+        setNavigationDisabled(false);
+        document.getElementById('btn-scan-stop').style.display = 'none';
+        document.getElementById('btn-search-stop').style.display = 'none';
+        
+        if (lastScanDate && currentView === 'scan') {
+             document.getElementById('btn-scan-next').style.display = 'inline-block';
+        }
+    }
+
+    async function startDynamicScan(continueFromLast = false, searchQuery = null, restoreState = null) {
+        if (selected.size > 0) {
+            const confirmed = await customConfirm("Vous avez " + selected.size + " BD sélectionnée(s) qui n'ont pas été ajoutées au panier.\nVoulez-vous vraiment continuer et perdre cette sélection ?", true);
+            if (confirmed === 'cancel') return;
+            if (confirmed === 'save') {
+                addToQueueFromSelection();
+            } else {
+                clearSelection();
+            }
+        }
         currentView = 'scan';
         viewHistory = [];
         applyViewParams();
         
-        if (!continueFromLast) {
+        if (restoreState) {
+            currentSearchQuery = restoreState.query;
+            searchSkipCount = restoreState.skip;
+            lastScanDate = restoreState.date;
+            if (currentSearchQuery) {
+                document.getElementById('tg-search').value = currentSearchQuery;
+            }
+            continueFromLast = restoreState.isContinue;
+            searchQuery = currentSearchQuery;
+        } else if (!continueFromLast) {
+            scanHistory = [];
+        }
+        
+        if (!restoreState) {
+            scanHistory.push({
+                query: searchQuery,
+                skip: continueFromLast && searchQuery ? searchSkipCount : 0,
+                date: continueFromLast && !searchQuery ? lastScanDate : null,
+                isContinue: continueFromLast
+            });
+        } else {
+            scanHistory.push(restoreState);
+        }
+        
+        if (!continueFromLast || restoreState) {
             grid.innerHTML = "";
             DATA.length = 0;
             selected.clear();
         }
         DATA.length = 0;
         selected.clear();
-        document.getElementById('btn-scan-next').style.display = 'none'; document.getElementById('btn-search-next').style.display = 'none';
+        
+        const showPrev = scanHistory.length > 1;
+        document.getElementById('btn-scan-prev').style.display = showPrev && !searchQuery ? 'inline-block' : 'none';
+        document.getElementById('btn-search-prev').style.display = showPrev && searchQuery ? 'inline-block' : 'none';
+        document.getElementById('btn-scan-next').style.display = 'none'; 
+        document.getElementById('btn-search-next').style.display = 'none';
         
         if (continueFromLast && lastScanDate && !searchQuery) {
             const titleDate = document.getElementById('title-scan-date');
@@ -792,16 +1094,11 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             if (titleDate) {
                 titleDate.innerText = '[' + dateOnly + ']';
             }
-            fetch('/api/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({start_date: lastScanDate})
-            });
         }
         
         updateCounter();
         
-        btnScan.disabled = true;
+        setNavigationDisabled(true);
         statusDiv.innerText = "Connexion...";
         
         let wsUrl = `ws://${window.location.host}/api/scan_stream`;
@@ -813,11 +1110,26 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             }
         } else {
             currentSearchQuery = null;
-            if (continueFromLast && lastScanDate) params.push(`continue_date=${encodeURIComponent(lastScanDate)}`);
+            if (continueFromLast && lastScanDate) {
+                params.push(`continue_date=${encodeURIComponent(lastScanDate)}`);
+                let dateOnly = lastScanDate;
+                if (dateOnly.includes('T')) dateOnly = dateOnly.split('T')[0];
+                else if (dateOnly.includes(' ')) dateOnly = dateOnly.split(' ')[0];
+                const dateInput = document.getElementById('start_date');
+                if (dateInput && dateInput.value !== dateOnly) {
+                    dateInput.value = dateOnly;
+                    updateConfig();
+                }
+            }
         }
         if (params.length > 0) wsUrl += "?" + params.join('&');
         
-        const ws = new WebSocket(wsUrl);
+        if (currentWebSocket) currentWebSocket.close();
+        currentWebSocket = new WebSocket(wsUrl);
+        const ws = currentWebSocket;
+        
+        document.getElementById('btn-scan-stop').style.display = !searchQuery ? 'inline-block' : 'none';
+        document.getElementById('btn-search-stop').style.display = searchQuery ? 'inline-block' : 'none';
         
         ws.onmessage = function(event) {
             const msg = JSON.parse(event.data);
@@ -827,15 +1139,22 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 const parts = msg.message.split('parmi ');
                 statusDiv.innerText = parts.length > 1 ? "Terminé ! " + parts[1] : msg.message;
                 statusDiv.style.color = "#4ade80";
-                btnScan.disabled = false;
-                if (msg.last_date) {
+                setNavigationDisabled(false);
+                document.getElementById('btn-scan-stop').style.display = 'none';
+                document.getElementById('btn-search-stop').style.display = 'none';
+                
+                if (currentSearchQuery) {
+                    document.getElementById('btn-search-next').style.display = 'inline-block';
+                } else if (msg.last_date) {
                     lastScanDate = msg.last_date;
                     document.getElementById('btn-scan-next').style.display = 'inline-block';
                 }
+                
+                renderGrid(DATA);
                 ws.close();
             } else if (msg.type === "error") {
                 statusDiv.innerText = "❌ ERREUR: " + msg.message;
-                btnScan.disabled = false;
+                setNavigationDisabled(false);
             } else if (msg.type === "comic") {
                 DATA.push(msg);
                 if (currentSearchQuery) searchSkipCount++;
@@ -845,7 +1164,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
         ws.onerror = function(e) {
             statusDiv.innerText = "❌ Erreur WebSocket.";
-            btnScan.disabled = false;
+            setNavigationDisabled(false);
         };
     }
 
@@ -902,11 +1221,12 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const isSel = selected.has(d.message_id);
         const displayName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
         const cleanName = displayName;
-        const safeOriginal = d.filename.replace(/'/g, "\'").replace(/"/g, "&quot;");
-        const safeClean = cleanName.replace(/'/g, "\'").replace(/"/g, "&quot;");
+        const safeOriginal = d.filename.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeClean = cleanName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const safeResults = encodeURIComponent(JSON.stringify(d.everything_results||[])).replace(/'/g, "%27");
         const color = COLORS[d.filename.charCodeAt(0) % COLORS.length];
         const isPinned = toReadList.has(d.filename);
+        const inQueue = downloadQueue.some(q => q.message_id === d.message_id);
         
         const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
         const ext = extMatch ? extMatch[1].toUpperCase() : '';
@@ -927,7 +1247,10 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           <div class="card-info">
             <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()" style="display:flex; align-items:center;">${titleHtml}</div>
             <div class="card-meta">${d.channel_name}<br>${d.date.split(' ')[0]} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
-            <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${safeClean}', '${safeResults}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
+            <div style="display:flex; gap:5px; align-items:center; margin-top:2px;">
+                <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${safeClean}', '${safeResults}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
+                ${inQueue ? '<span class="badge" style="background:#064e3b; color:#10b981; border:1px solid #10b98140; cursor:default;">🛒 À télécharger</span>' : ''}
+            </div>
             <div class="progress-container" id="dl-container-${d.message_id}">
                 <div class="progress-bar" id="dl-progress-${d.message_id}"></div>
             </div>
@@ -936,37 +1259,70 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           <div class="checkmark">✓</div>
         </div>`;
       }).join('');
+      
+      let nextCardHtml = '';
+      if (currentView === 'scan' && document.getElementById('btn-scan-next').style.display !== 'none' && !currentSearchQuery) {
+          nextCardHtml = `
+          <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#0f172a; border:2px dashed #3b82f6; cursor:pointer; min-height: 250px; transition: all 0.2s; box-shadow: none;" onmouseover="this.style.background='#1e293b'; this.style.borderColor='#60a5fa';" onmouseout="this.style.background='#0f172a'; this.style.borderColor='#3b82f6';" onclick="document.getElementById('btn-scan-next').click()">
+             <div style="font-size:3rem; margin-bottom:10px;">⏩</div>
+             <div style="color:#60a5fa; font-weight:bold; font-size:1.1rem; text-align:center;">Page<br>Suivante</div>
+          </div>`;
+      } else if (currentView === 'scan' && document.getElementById('btn-search-next').style.display !== 'none' && currentSearchQuery) {
+          nextCardHtml = `
+          <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#0f172a; border:2px dashed #8b5cf6; cursor:pointer; min-height: 250px; transition: all 0.2s; box-shadow: none;" onmouseover="this.style.background='#1e293b'; this.style.borderColor='#a78bfa';" onmouseout="this.style.background='#0f172a'; this.style.borderColor='#8b5cf6';" onclick="document.getElementById('btn-search-next').click()">
+             <div style="font-size:3rem; margin-bottom:10px;">⏩</div>
+             <div style="color:#a78bfa; font-weight:bold; font-size:1.1rem; text-align:center;">Résultats<br>Suivants</div>
+          </div>`;
+      }
+      grid.innerHTML += nextCardHtml;
+      
       updateCounter(items.length);
     }
     
     const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899'];
 
-    function toggleCard(card) {
-      const id=parseInt(card.dataset.id);
-      if (selected.has(id)){selected.delete(id);card.classList.remove('selected');}
-      else{selected.add(id);card.classList.add('selected');}
-      updateCounter();
-    }
     function selectAllVisible() {
-      document.querySelectorAll('.card').forEach(c=>{
-          const id = parseInt(c.dataset.id);
-          if(c.style.display !== 'none') {
-              selected.add(id); c.classList.add('selected');
-          }
-      });
-      updateCounter();
+        document.querySelectorAll('.card').forEach(el => {
+            if(el.style.display !== 'none' && el.dataset.id) {
+                const id = parseInt(el.dataset.id);
+                if (!isNaN(id)) {
+                    selected.add(id);
+                    el.classList.add('selected');
+                }
+            }
+        });
+        updateCounter(DATA.length);
     }
     function deselectAll() {
-      selected.clear();
-      document.querySelectorAll('.card').forEach(c=>c.classList.remove('selected'));
-      updateCounter();
+        clearSelection();
+        updateCounter(DATA.length);
+        renderGrid(DATA);
+    }
+    
+    function toggleCard(el) {
+        if (!el.dataset.id) return;
+        const id = parseInt(el.dataset.id);
+        if (selected.has(id)) {
+            selected.delete(id);
+            el.classList.remove('selected');
+            const item = DATA.find(d => d.message_id === id);
+            if (item && toReadList.has(item.filename) && !downloadQueue.some(q => q.message_id === id)) {
+                toReadList.delete(item.filename);
+                const btn = document.getElementById('btn-read-' + id);
+                if (btn) btn.classList.remove('pinned');
+            }
+        } else {
+            selected.add(id);
+            el.classList.add('selected');
+        }
+        updateCounter(DATA.length);
     }
     function updateCounter(vis) {
       const v = vis!==undefined ? vis : document.querySelectorAll('.card:not([style*="display: none"])').length;
       const s = selected.size;
       document.getElementById('counter').textContent=`${v} visible / ${s} sélec.`;
       const btn=document.getElementById('export-btn');
-      btn.textContent=`⬇️ Télécharger (${s})`;
+      btn.textContent=`📥 Panier (${s})`;
       btn.disabled=s===0;
     }
     
@@ -974,34 +1330,107 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         let ind = document.getElementById('global-dl-indicator');
         if(activeDownloadsCount > 0) {
             ind.style.display = 'block';
-            ind.innerHTML = `<b>⏳ ${activeDownloadsCount} téléchargement(s)</b> (cliquer pour détails)`;
-            ind.style.cursor = 'pointer';
+            ind.innerHTML = `<b>⏳ ${activeDownloadsCount} téléchargement(s)</b>`;
         } else {
             ind.style.display = 'none';
         }
     }
     
-    function downloadSelection(isToRead) {
+    function addToQueueFromSelection() {
+        const toDownload = DATA.filter(d => selected.has(d.message_id));
+        if (toDownload.length === 0) return;
+        
+        toDownload.forEach(d => {
+            if (!downloadQueue.find(q => q.message_id === d.message_id)) {
+                downloadQueue.push({
+                    message_id: d.message_id,
+                    channel: d.channel,
+                    filename: d.filename,
+                    to_read: toReadList.has(d.filename)
+                });
+            }
+        });
+        deselectAll();
+        updateQueueIndicator();
+        renderGrid(DATA);
+    }
+    
+    function removeFromQueue(msg_id) {
+        const qIdx = downloadQueue.findIndex(q => q.message_id === msg_id);
+        if (qIdx !== -1) {
+            const q = downloadQueue[qIdx];
+            if (q.to_read && toReadList.has(q.filename)) {
+                toReadList.delete(q.filename);
+                const btn = document.getElementById('btn-read-' + msg_id);
+                if (btn) btn.classList.remove('pinned');
+            }
+            downloadQueue.splice(qIdx, 1);
+        }
+        updateQueueIndicator();
+        renderQueueList();
+        renderGrid(DATA);
+    }
+    
+    function startQueuedDownloads() {
         if (!dlSocket || dlSocket.readyState !== WebSocket.OPEN) {
             alert("Erreur: WebSocket de téléchargement non connecté.");
             return;
         }
-        const toDownload = DATA.filter(d => selected.has(d.message_id));
-        if (toDownload.length === 0) return;
+        if (downloadQueue.length === 0) return;
         
-        activeDownloadsCount += toDownload.length;
+        const toProcess = [...downloadQueue];
+        downloadQueue = []; // clear queue immediately
+        updateQueueIndicator();
+        renderGrid(DATA);
+        
+        activeDownloadsCount += toProcess.length;
         updateGlobalDownloadIndicator();
         
-        toDownload.forEach(d => {
-            downloadsState[d.message_id] = {filename: d.filename, status: 'En file d\'attente...', current:0, total:0};
+        toProcess.forEach(d => {
+            downloadsState[d.message_id] = {filename: d.filename, channel: d.channel, to_read: d.to_read || false, status: 'En file d\'attente...', current:0, total:0};
             dlSocket.send(JSON.stringify({
                 action: "download",
                 message_id: d.message_id,
                 channel: d.channel,
-                filename: d.filename
+                filename: d.filename,
+                to_read: d.to_read || false
             }));
         });
-        deselectAll();
+        if(document.getElementById('downloads-modal').style.display === 'flex') {
+            renderDownloadsModal();
+        }
+    }
+
+    function renderQueueList() {
+        const list = document.getElementById('queue-list');
+        if (!list) return;
+        list.innerHTML = '';
+        if (downloadQueue.length === 0) {
+            list.innerHTML = '<div class="help-text">La liste est vide.</div>';
+            return;
+        }
+        
+        downloadQueue.forEach(q => {
+            const div = document.createElement('div');
+            div.style.cssText = 'background:#0f172a; padding:8px 10px; border-radius:6px; border:1px solid #334155; font-size:12px; display:flex; justify-content:space-between; align-items:center;';
+            
+            const info = document.createElement('div');
+            info.style.flexGrow = '1';
+            info.style.whiteSpace = 'nowrap';
+            info.style.overflow = 'hidden';
+            info.style.textOverflow = 'ellipsis';
+            info.innerHTML = `<span style="color:#e2e8f0;">${q.filename}</span>${q.to_read ? ' <span style="font-size:10px; background:#f59e0b; color:white; padding:1px 4px; border-radius:3px;">À lire</span>' : ''}`;
+            
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'background:#ef4444; color:white; border:none; margin-left:10px; padding:3px 6px; cursor:pointer; font-size:10px; flex-shrink:0;';
+            btn.innerText = '🗑️';
+            btn.onclick = () => removeFromQueue(q.message_id);
+            
+            div.appendChild(info);
+            div.appendChild(btn);
+            list.appendChild(div);
+        });
     }
 
     /* Modale Recherche Manuelle */
@@ -1259,6 +1688,35 @@ exportSelection = function() {
     html = html.replace("</body>", injection)
     return HTMLResponse(html)
 
+from fastapi.responses import FileResponse
+from fastapi import HTTPException
+
+thumb_semaphore = None
+
+async def download_thumb_task(client, photo, path):
+    global thumb_semaphore
+    if thumb_semaphore is None:
+        thumb_semaphore = asyncio.Semaphore(4)
+        
+    try:
+        if not os.path.exists(path):
+            tmp_path = path + ".tmp"
+            async with thumb_semaphore:
+                await client.download_media(photo, file=tmp_path)
+            if os.path.exists(tmp_path):
+                os.replace(tmp_path, path)
+    except Exception as e:
+        print("Erreur download thumb:", e)
+
+@app.get("/api/wait_thumb/{message_id}")
+async def wait_thumb(message_id: int):
+    thumb_path = os.path.join(PROJECT_DIR, "thumbs", f"{message_id}.jpg")
+    for _ in range(60): # 30 seconds max
+        if os.path.exists(thumb_path):
+            return FileResponse(thumb_path)
+        await asyncio.sleep(0.5)
+    raise HTTPException(status_code=404, detail="Thumbnail timeout")
+
 @app.websocket("/api/scan_stream")
 async def scan_stream(websocket: WebSocket, continue_date: str = None, search_query: str = None, skip: int = 0):
     await websocket.accept()
@@ -1407,8 +1865,10 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
                         os.makedirs(thumb_dir, exist_ok=True)
                         thumb_path = os.path.join(thumb_dir, f"{message.id}.jpg")
                         if not os.path.exists(thumb_path):
-                            await telegram_client.download_media(cover.photo, file=thumb_path)
-                        thumb_url = f"/thumbs/{message.id}.jpg"
+                            asyncio.create_task(download_thumb_task(telegram_client, cover.photo, thumb_path))
+                            thumb_url = f"/api/wait_thumb/{message.id}"
+                        else:
+                            thumb_url = f"/thumbs/{message.id}.jpg"
                         
                     data = {
                         "type": "comic",
@@ -1607,7 +2067,7 @@ async def downloads_ws(websocket: WebSocket):
                 try: os.remove(temp_file_path)
                 except: pass
         except Exception as e:
-            await websocket.send_json({"type": "status", "message_id": msg_id, "status": f"Erreur ❌"})
+            await websocket.send_json({"type": "status", "message_id": msg_id, "status": f"Erreur ❌ ({str(e)[:50]})"})
             if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
                 try: os.remove(temp_file_path)
                 except: pass
