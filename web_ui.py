@@ -1024,13 +1024,20 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
     function extractTitle(filename) {
       let n = filename.replace(/\.(cbz|cbr|pdf)$/i,'').replace(/_/g,' ');
-      n = n.replace(/\s*(T\d+|Tome\s*\d+|\bOS\b|\bHS\b|\bO\s+S\b|\bO\.?S\.?\b|\(|\s-\s|\d{4}).*$/i,'');
+      // Supprimer ce qui est entre parenthèses et crochets
+      n = n.replace(/\([^)]*\)/g, ' ').replace(/\[[^\]]*\]/g, ' ');
+      // Supprimer les tomes / OS / HS / années
+      n = n.replace(/\s*(T\d+|Tome\s*\d+|Vol\s*\d+|\bOS\b|\bHS\b|\bO\s+S\b|\bO\.?S\.?\b|\d{4}).*$/i, '');
+      // Supprimer les sous-titres après tiret
+      n = n.split(/\s+[-–—]\s+/)[0];
+      // Supprimer les éditeurs courants à la fin si présents
+      n = n.replace(/\b(Dargaud|Dupuis|Glénat|Glenat|Soleil|Delcourt|Le Lombard|Lombard|Casterman|Bamboo|Futuropolis|Ankama|Paquet|Urban|Panini)\b.*$/i, '');
       return n.trim();
     }
     function bdtUrl(filename) {
       var title = extractTitle(filename);
       if (!title || title.length < 2) return null;
-      return 'https://duckduckgo.com/?q=' + encodeURIComponent('!lucky site:bedetheque.com ' + title);
+      return 'https://www.google.com/search?q=' + encodeURIComponent('site:bedetheque.com ' + title);
     }
     function closeModal(id) { document.getElementById(id).style.display='none'; }
     document.addEventListener('keydown', e=>{ 
