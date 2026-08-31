@@ -102,7 +102,7 @@ h1 {font-size:1.15rem;color:#60a5fa;flex:0 0 auto;white-space:nowrap; margin-rig
   cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s;border:2px solid transparent}
 .card:hover {transform:scale(1.04);box-shadow:0 8px 24px #00000070;z-index:2}
 .card.selected {border-color:#22c55e;box-shadow:0 0 0 3px #22c55e30}
-.cover {width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0f172a;}
+.cover {width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#0f172a;cursor:zoom-in;}
 .card-info {padding:7px 9px 9px; display:flex; flex-direction:column; gap:4px;}
 .card-title {font-size:0.75rem;font-weight:600;line-height:1.3;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px}
@@ -112,21 +112,23 @@ h1 {font-size:1.15rem;color:#60a5fa;flex:0 0 auto;white-space:nowrap; margin-rig
 .badge.NOUVEAU {background:#052e16;color:#22c55e;border:1px solid #22c55e40}
 .badge.INCERTAIN {background:#1c1407;color:#f59e0b;border:1px solid #f59e0b40}
 .badge.DOUBLON {background:#2e0505;color:#ef4444;border:1px solid #ef444440}
-.checkmark {position:absolute;top:7px;right:36px;width:22px;height:22px;border-radius:50%;
-  background:#22c55e;color:#fff;display:none;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;box-shadow:0 2px 6px #00000060}
-.card.selected .checkmark {display:flex}
+.checkmark {position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;
+  background:#0f172acc;border:2px solid #94a3b8;color:#94a3b8;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;z-index:10;box-shadow:0 2px 6px #00000080}
+.checkmark:hover {border-color:#22c55e;color:#22c55e;background:#0f172a;transform:scale(1.15)}
+.card.selected .checkmark {background:#22c55e;border-color:#22c55e;color:#fff;box-shadow:0 0 8px #22c55e80;transform:scale(1.05)}
 .bdt-link {position:absolute;top:7px;left:7px;width:22px;height:22px;border-radius:50%;
   background:#1e293bcc;color:#60a5fa;display:flex;align-items:center;justify-content:center;
   font-size:12px;text-decoration:none;opacity:0;transition:opacity .2s;border:1px solid #3b82f660}
 .card:hover .bdt-link {opacity:1}
 
-.pin-link {position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;
-  background:#1e293bcc;color:white;display:flex;align-items:center;justify-content:center;
-  font-size:14px;cursor:pointer;opacity:0;transition:all .2s;border:1px solid #94a3b860; z-index:10;}
+.pin-link {position:absolute;top:7px;right:36px;width:24px;height:24px;border-radius:50%;
+  background:#0f172acc;color:#94a3b8;display:flex;align-items:center;justify-content:center;
+  font-size:13px;cursor:pointer;opacity:0;transition:all .2s;border:1px solid #94a3b860; z-index:10;}
 .card:hover .pin-link {opacity:1}
-.pin-link.pinned {opacity:1; background:#0f172acc; border:1px solid #f59e0b;}
-.pin-link:hover {transform:scale(1.1);}
+.pin-link:hover {transform:scale(1.15);border-color:#f59e0b;color:#f59e0b;}
+.pin-link.pinned {opacity:1 !important; background:#f59e0b !important; color:#ffffff !important; border:2px solid #fbbf24 !important; box-shadow:0 0 10px rgba(245,158,11,0.8); transform:scale(1.1);}
+.pin-link.pinned:hover {background:#d97706 !important; transform:scale(1.2);}
 
 
 /* Progress bar inside card */
@@ -164,10 +166,23 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 <body>
 
 <header style="flex-direction: column; gap: 10px; align-items: stretch; padding: 10px 20px;">
-  <div style="display:flex; justify-content:space-between; width:100%;">
-      <h1>📚 BD Telegram</h1>
+  <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <h1 style="margin:0;">📚 BD Telegram</h1>
+          <div style="display:flex; align-items:center; gap:10px; background:#1e293b; padding:4px 12px; border-radius:8px; border:1px solid #334155; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase;">📡 Canal :</span>
+                  <select id="header-channel-select" onchange="changeActiveChannel(parseInt(this.value))" style="background:#0f172a; color:#38bdf8; font-weight:700; border:1px solid #38bdf860; border-radius:5px; padding:4px 10px; font-size:13px; cursor:pointer; outline:none; max-width:280px;">
+                  </select>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; background:#0f172a; padding:3px 8px; border-radius:5px; border:1px solid #334155;">
+                  <label for="header-channel-date" style="font-size:12px; color:#94a3b8; font-weight:600; cursor:pointer;" title="Modifier directement la date de départ du canal actif">📅 Date :</label>
+                  <input type="date" id="header-channel-date" onchange="onHeaderDateChange(this.value)" style="background:transparent; color:#60a5fa; font-weight:700; border:none; padding:1px 4px; font-size:12px; cursor:pointer; outline:none;" title="Date de départ pour le scan chronologique de ce canal">
+              </div>
+          </div>
+      </div>
       <div class="actions">
-        <button class="btn" onclick="document.getElementById('settings-modal').style.display='flex'">⚙️ Config</button>
+        <button class="btn" onclick="document.getElementById('settings-modal').style.display='flex'; renderSettingsChannelsList();">⚙️ Config & Canaux</button>
       </div>
   </div>
   
@@ -185,7 +200,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       
       <!-- Catégorie: Scan Telegram -->
       <div style="flex: 1; display:flex; flex-direction:column; gap:8px; border-right: 1px solid #334155; padding-right: 20px;">
-          <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Scan Chronologique (Telegram)</h3>
+          <h3 style="font-size: 13px; color: #94a3b8; margin:0; text-transform:uppercase;">Scan Chronologique <span id="title-scan-date" style="color:#60a5fa; font-weight:bold;"></span></h3>
           <div style="display:flex; gap:10px; align-items:center;">
               <button class="btn" id="btn-scan-prev" style="display:none; background:#8b5cf6; color:white; border:none; white-space:nowrap;" onclick="goPreviousPage()">⏪ Précédentes</button>
               <button class="btn btn-primary" id="btn-scan" onclick="startDynamicScan()" style="white-space:nowrap;">🚀 Scanner</button>
@@ -257,51 +272,67 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
 <!-- Modal Config -->
 <div class="modal-overlay" id="settings-modal" onclick="closeModal('settings-modal')">
-  <div class="modal-content" onclick="event.stopPropagation()">
+  <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 720px; width: 95%;">
     <div class="modal-hdr">
-      <h2>⚙️ Paramètres de Scan</h2>
+      <h2>⚙️ Paramètres & Gestion des Canaux</h2>
       <button class="modal-close" onclick="closeModal('settings-modal')">&times;</button>
     </div>
-    <div class="settings-grid">
-        <div class="form-label">Date de départ :</div>
-        <div>
-            <input type="date" id="start_date" onchange="updateConfig()">
-            <div class="help-text">Laissez vide pour le curseur automatique.</div>
+    
+    <div style="overflow-y: auto; max-height: 72vh; padding-right: 5px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Section Canaux Telegram & Dates -->
+        <div style="background: #0f172a; padding: 14px; border-radius: 8px; border: 1px solid #334155;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; color: #38bdf8; margin:0; text-transform:uppercase; font-weight: bold;">📡 Canaux Telegram & Dates de Départ</h3>
+                <span style="font-size: 11px; color: #94a3b8;">Progression individuelle par canal</span>
+            </div>
+            
+            <div id="settings-channels-list" style="display:flex; flex-direction:column; gap:8px;">
+                <!-- Rendu dynamique des canaux -->
+            </div>
+
+            <!-- Formulaire d'ajout de canal -->
+            <div style="display:flex; gap:8px; align-items:center; margin-top: 12px; background: #1e293b; padding: 10px; border-radius: 6px; border: 1px dashed #475569; flex-wrap:wrap;">
+                <input type="text" id="new-channel-id" placeholder="ID du canal (ex: -1001774120183)" style="flex:1; min-width:180px; padding:6px 10px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:12px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <label for="new-channel-date" style="font-size:11px; color:#94a3b8;">Départ :</label>
+                    <input type="date" id="new-channel-date" style="padding:5px 8px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:12px;" title="Date de départ (optionnelle)">
+                </div>
+                <button class="btn btn-primary" onclick="addNewChannel()" style="padding:6px 12px; font-size:12px; white-space:nowrap;">➕ Ajouter</button>
+            </div>
         </div>
-        <div class="form-label">Channels Telegram :</div>
-        <div>
-            <input type="text" id="channels" onchange="updateConfig()" placeholder="ex: -1001774120183, -1001477882596">
-            <div class="help-text">ID de canaux séparés par des virgules.</div>
-        </div>
-        <div class="form-label">Dossiers BD Locaux :</div>
-        <div>
-            <input type="text" id="bd_search_paths" onchange="updateConfig()" placeholder="ex: F:\BD, F:\Téléchargements">
-            <div class="help-text">Dossiers pour Everything séparés par des virgules.</div>
-        </div>
-        <div class="form-label">Mots-clés (Filtre) :</div>
-        <div>
-            <input type="text" id="filename_filter" onchange="updateConfig()" placeholder="ex: 2025, 2026, Casterman">
-            <div class="help-text">Séparés par des virgules.</div>
-        </div>
-        <div class="form-label">Téléchargements // :</div>
-        <div>
-            <input type="number" id="download_concurrency" onchange="updateConfig()" min="1" max="20">
-            <div class="help-text">Fichiers téléchargés en simultané.</div>
-        </div>
-        <div class="form-label">Limite d'affichage (Max) :</div>
-        <div>
-            <input type="number" id="max_gallery_size" onchange="updateConfig()">
-            <div class="help-text">Nombre max de BD affichées.</div>
-        </div>
-        <div class="form-label">Seuil Doublon :</div>
-        <div>
-            <input type="number" id="fuzzy_threshold_duplicate" onchange="updateConfig()" min="0" max="100">
-            <div class="help-text">Score (0-100) pour ROUGE.</div>
-        </div>
-        <div class="form-label">Seuil Incertain :</div>
-        <div>
-            <input type="number" id="fuzzy_threshold_review" onchange="updateConfig()" min="0" max="100">
-            <div class="help-text">Score (0-100) pour ORANGE.</div>
+
+        <!-- Section Paramètres Généraux -->
+        <div class="settings-grid" style="gap: 12px;">
+            <div class="form-label">Dossiers BD Locaux :</div>
+            <div>
+                <input type="text" id="bd_search_paths" onchange="updateConfig()" placeholder="ex: F:\BD, F:\Téléchargements">
+                <div class="help-text">Dossiers pour Everything séparés par des virgules.</div>
+            </div>
+            <div class="form-label">Mots-clés (Filtre) :</div>
+            <div>
+                <input type="text" id="filename_filter" onchange="updateConfig()" placeholder="ex: 2025, 2026, Casterman">
+                <div class="help-text">Séparés par des virgules.</div>
+            </div>
+            <div class="form-label">Téléchargements // :</div>
+            <div>
+                <input type="number" id="download_concurrency" onchange="updateConfig()" min="1" max="20">
+                <div class="help-text">Fichiers téléchargés en simultané.</div>
+            </div>
+            <div class="form-label">Limite d'affichage (Max) :</div>
+            <div>
+                <input type="number" id="max_gallery_size" onchange="updateConfig()">
+                <div class="help-text">Nombre max de BD affichées.</div>
+            </div>
+            <div class="form-label">Seuil Doublon :</div>
+            <div>
+                <input type="number" id="fuzzy_threshold_duplicate" onchange="updateConfig()" min="0" max="100">
+                <div class="help-text">Score (0-100) pour ROUGE.</div>
+            </div>
+            <div class="form-label">Seuil Incertain :</div>
+            <div>
+                <input type="number" id="fuzzy_threshold_review" onchange="updateConfig()" min="0" max="100">
+                <div class="help-text">Score (0-100) pour ORANGE.</div>
+            </div>
         </div>
     </div>
   </div>
@@ -360,6 +391,16 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         </div>
     </div>
 </div>
+
+<!-- Modal Zoom Pochette (Lightbox) -->
+<div class="modal-overlay" id="image-modal" onclick="closeModal('image-modal')" style="background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(6px); z-index: 2000; cursor: zoom-out;">
+    <div style="position: relative; max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column; align-items: center; justify-content: center;" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeModal('image-modal')" style="position: absolute; top: -14px; right: -14px; background: #1e293b; color: white; border: 2px solid #475569; border-radius: 50%; width: 34px; height: 34px; font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 2001; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.6);" title="Fermer (Échap)">&times;</button>
+        <img id="image-modal-img" src="" alt="Pochette BD" style="max-width: 90vw; max-height: 82vh; object-fit: contain; border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,0.9); border: 1px solid #334155; display: block; cursor: default;">
+        <div id="image-modal-title" style="margin-top: 12px; color: #f1f5f9; font-size: 1rem; font-weight: 600; text-align: center; max-width: 85vw; text-shadow: 0 2px 6px rgba(0,0,0,0.9); word-break: break-word;"></div>
+    </div>
+</div>
+
 <div id="tooltip"></div>
 
 
@@ -494,6 +535,8 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 toReadList.delete(item.filename);
                 const btn = document.getElementById('btn-read-' + id);
                 if (btn) btn.classList.remove('pinned');
+                const bRead = document.getElementById('badge-read-' + id);
+                if (bRead) bRead.style.display = 'none';
             }
         });
         selected.clear();
@@ -714,29 +757,234 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
     initDownloadSocket();
 
-    // Config initialisation
-    fetch('/api/config').then(r=>r.json()).then(c => {
-        if(c.start_date) {
-            let sDate = c.start_date;
+    let appConfig = {};
+    let channelsList = [];
+    let activeChannelId = null;
+
+    function updateDateDisplay(dateStr) {
+        let clean = dateStr || "";
+        if (clean.includes('T')) clean = clean.split('T')[0];
+        else if (clean.includes(' ')) clean = clean.split(' ')[0];
+        
+        const hDate = document.getElementById('header-channel-date');
+        const titleDate = document.getElementById('title-scan-date');
+        if (hDate && hDate.value !== clean) hDate.value = clean;
+        if (titleDate) titleDate.innerText = clean ? `[${clean}]` : '';
+    }
+
+    function renderSettingsChannelsList() {
+        const list = document.getElementById('settings-channels-list');
+        if (!list) return;
+        if (!channelsList || channelsList.length === 0) {
+            list.innerHTML = '<div class="help-text" style="text-align:center; padding:10px;">Aucun canal configuré. Ajoutez-en un ci-dessous.</div>';
+            return;
+        }
+        
+        list.innerHTML = channelsList.map(ch => {
+            const isActive = (ch.id === activeChannelId);
+            let sDate = ch.start_date || "";
             if (sDate.includes('T')) sDate = sDate.split('T')[0];
             else if (sDate.includes(' ')) sDate = sDate.split(' ')[0];
-            document.getElementById('start_date').value = sDate;
+            
+            return `<div style="display:flex; align-items:center; justify-content:space-between; background:#1e293b; padding:8px 12px; border-radius:6px; border:1px solid ${isActive ? '#38bdf8' : '#334155'}; gap:10px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:200px;">
+                    <button class="btn" style="padding:3px 8px; font-size:11px; ${isActive ? 'background:#0284c7; color:white; font-weight:bold;' : 'background:#334155; color:#94a3b8;'}" onclick="changeActiveChannel(${ch.id})" title="Définir comme canal actif">${isActive ? 'Actif ★' : 'Activer'}</button>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-weight:600; color:white; font-size:13px;">${ch.name}</span>
+                        <span style="color:#64748b; font-size:11px;">ID: ${ch.id}</span>
+                    </div>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label style="font-size:11px; color:#94a3b8;">Date de départ :</label>
+                    <input type="date" value="${sDate}" onchange="updateChannelDate(${ch.id}, this.value)" style="padding:4px 8px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:white; font-size:12px; width:130px;" title="Changer la date de départ pour ce canal">
+                    <button class="btn" style="background:#ef4444; color:white; border:none; padding:4px 8px; font-size:11px; cursor:pointer;" onclick="removeChannel(${ch.id})" title="Supprimer ce canal">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function onHeaderDateChange(newVal) {
+        if (!activeChannelId) return;
+        updateChannelDate(activeChannelId, newVal);
+    }
+
+    function updateChannelDate(chId, newDate) {
+        if (!appConfig.channel_start_dates) appConfig.channel_start_dates = {};
+        appConfig.channel_start_dates[chId.toString()] = newDate;
+        
+        const ch = channelsList.find(c => c.id === chId);
+        if (ch) ch.start_date = newDate;
+        
+        if (chId === activeChannelId) {
+            lastScanDate = newDate || null;
+            updateDateDisplay(newDate);
         }
-        if(c.filename_filter) document.getElementById('filename_filter').value = c.filename_filter.join(', ');
-        if(c.channels) document.getElementById('channels').value = c.channels.join(', ');
-        if(c.bd_search_paths) document.getElementById('bd_search_paths').value = c.bd_search_paths.join(', ');
-        if(c.download_concurrency) document.getElementById('download_concurrency').value = c.download_concurrency;
-        if(c.max_gallery_size) document.getElementById('max_gallery_size').value = c.max_gallery_size;
-        if(c.fuzzy_threshold_duplicate) document.getElementById('fuzzy_threshold_duplicate').value = c.fuzzy_threshold_duplicate;
-        if(c.fuzzy_threshold_review) document.getElementById('fuzzy_threshold_review').value = c.fuzzy_threshold_review;
-    });
+        
+        renderSettingsChannelsList();
+        
+        fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                start_date: (chId === activeChannelId) ? newDate : (appConfig.start_date || ""),
+                active_channel: activeChannelId,
+                channel_start_dates: appConfig.channel_start_dates
+            })
+        });
+    }
+
+    async function addNewChannel() {
+        const idInput = document.getElementById('new-channel-id');
+        const dateInput = document.getElementById('new-channel-date');
+        let rawVal = idInput.value.trim();
+        if (!rawVal) return;
+        
+        let chId = parseInt(rawVal);
+        if (isNaN(chId)) {
+            alert("Veuillez saisir un identifiant numérique valide pour le canal (ex: -1001774120183)");
+            return;
+        }
+        
+        if (channelsList.some(c => c.id === chId)) {
+            alert("Ce canal est déjà présent dans la liste.");
+            return;
+        }
+        
+        const initDate = dateInput.value || "";
+        if (!appConfig.channels) appConfig.channels = [];
+        appConfig.channels.push(chId);
+        
+        if (!appConfig.channel_start_dates) appConfig.channel_start_dates = {};
+        appConfig.channel_start_dates[chId.toString()] = initDate;
+        
+        idInput.value = "";
+        dateInput.value = "";
+        
+        await fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                channels: appConfig.channels,
+                channel_start_dates: appConfig.channel_start_dates
+            })
+        });
+        
+        loadChannelsAndConfig();
+    }
+
+    async function removeChannel(chId) {
+        if (!confirm("Voulez-vous vraiment supprimer ce canal de la liste ?")) return;
+        
+        appConfig.channels = (appConfig.channels || []).filter(id => id !== chId);
+        if (appConfig.channel_start_dates) {
+            delete appConfig.channel_start_dates[chId.toString()];
+        }
+        
+        if (activeChannelId === chId) {
+            activeChannelId = appConfig.channels.length > 0 ? appConfig.channels[0] : null;
+        }
+        
+        await fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                channels: appConfig.channels,
+                active_channel: activeChannelId,
+                channel_start_dates: appConfig.channel_start_dates
+            })
+        });
+        
+        loadChannelsAndConfig();
+    }
+
+    function loadChannelsAndConfig() {
+        fetch('/api/channels_list').then(r=>r.json()).then(data => {
+            channelsList = data.channels || [];
+            activeChannelId = data.active_channel || (channelsList[0] ? channelsList[0].id : null);
+            
+            const hSelect = document.getElementById('header-channel-select');
+            if (hSelect) hSelect.innerHTML = '';
+            
+            channelsList.forEach(ch => {
+                const opt1 = document.createElement('option');
+                opt1.value = ch.id;
+                opt1.innerText = ch.name;
+                if (ch.id === activeChannelId) opt1.selected = true;
+                if (hSelect) hSelect.appendChild(opt1);
+            });
+            
+            const currentCh = channelsList.find(c => c.id === activeChannelId);
+            const sDate = currentCh ? currentCh.start_date : "";
+            lastScanDate = sDate || null;
+            updateDateDisplay(sDate);
+            renderSettingsChannelsList();
+        });
+
+        fetch('/api/config').then(r=>r.json()).then(c => {
+            appConfig = c;
+            if(c.filename_filter) document.getElementById('filename_filter').value = c.filename_filter.join(', ');
+            if(c.bd_search_paths) document.getElementById('bd_search_paths').value = c.bd_search_paths.join(', ');
+            if(c.download_concurrency) document.getElementById('download_concurrency').value = c.download_concurrency;
+            if(c.max_gallery_size) document.getElementById('max_gallery_size').value = c.max_gallery_size;
+            if(c.fuzzy_threshold_duplicate) document.getElementById('fuzzy_threshold_duplicate').value = c.fuzzy_threshold_duplicate;
+            if(c.fuzzy_threshold_review) document.getElementById('fuzzy_threshold_review').value = c.fuzzy_threshold_review;
+        });
+    }
+
+    loadChannelsAndConfig();
+
+    async function changeActiveChannel(newChannelId) {
+        if (newChannelId === activeChannelId) return;
+        if (selected.size > 0) {
+            const confirmed = await customConfirm("Vous avez " + selected.size + " BD sélectionnée(s) qui n'ont pas été ajoutées au panier.\nVoulez-vous vraiment changer de canal et perdre cette sélection ?", true);
+            if (confirmed === 'cancel') {
+                if (document.getElementById('header-channel-select')) document.getElementById('header-channel-select').value = activeChannelId;
+                return;
+            }
+            if (confirmed === 'save') {
+                addToQueueFromSelection();
+            } else {
+                clearSelection();
+            }
+        }
+        
+        activeChannelId = newChannelId;
+        if (document.getElementById('header-channel-select')) document.getElementById('header-channel-select').value = activeChannelId;
+        
+        const ch = channelsList.find(c => c.id === activeChannelId);
+        let sDate = (ch && ch.start_date) ? ch.start_date : "";
+        if (sDate.includes('T')) sDate = sDate.split('T')[0];
+        else if (sDate.includes(' ')) sDate = sDate.split(' ')[0];
+        
+        updateDateDisplay(sDate);
+        lastScanDate = sDate || null;
+        renderSettingsChannelsList();
+        
+        // Nettoyer la vue pour le nouveau canal
+        grid.innerHTML = "";
+        DATA.length = 0;
+        scanHistory = [];
+        statusDiv.innerText = `Canal actif : ${ch ? ch.name : activeChannelId}`;
+        statusDiv.style.color = "#38bdf8";
+        
+        document.getElementById('btn-scan-prev').style.display = 'none';
+        document.getElementById('btn-scan-next').style.display = 'none';
+        document.getElementById('btn-search-prev').style.display = 'none';
+        document.getElementById('btn-search-next').style.display = 'none';
+        
+        updateCounter(0);
+        
+        fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ active_channel: activeChannelId })
+        });
+    }
 
     function updateConfig() {
-        const date = document.getElementById('start_date').value;
         const filterStr = document.getElementById('filename_filter').value;
         const filter = filterStr ? filterStr.split(',').map(s => s.trim()).filter(s => s) : [];
-        const channelsStr = document.getElementById('channels').value;
-        const channels = channelsStr ? channelsStr.split(',').map(s => parseInt(s.trim())).filter(s => !isNaN(s)) : [];
         const bdPathsStr = document.getElementById('bd_search_paths').value;
         const bdPaths = bdPathsStr ? bdPathsStr.split(',').map(s => s.trim()).filter(s => s) : [];
         const concurrency = parseInt(document.getElementById('download_concurrency').value) || 5;
@@ -744,18 +992,19 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         const threshDup = parseInt(document.getElementById('fuzzy_threshold_duplicate').value) || 85;
         const threshRev = parseInt(document.getElementById('fuzzy_threshold_review').value) || 50;
         
-        const titleDate = document.getElementById('title-scan-date');
-        if (titleDate && date) {
-            titleDate.innerText = '[' + date + ']';
-        }
-        
         fetch('/api/config', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                start_date: date, filename_filter: filter, download_concurrency: concurrency,
-                max_gallery_size: maxGal, fuzzy_threshold_duplicate: threshDup, fuzzy_threshold_review: threshRev,
-                channels: channels, bd_search_paths: bdPaths
+                active_channel: activeChannelId,
+                channel_start_dates: appConfig.channel_start_dates,
+                filename_filter: filter,
+                download_concurrency: concurrency,
+                max_gallery_size: maxGal,
+                fuzzy_threshold_duplicate: threshDup,
+                fuzzy_threshold_review: threshRev,
+                channels: appConfig.channels,
+                bd_search_paths: bdPaths
             })
         });
     }
@@ -784,7 +1033,24 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
       return 'https://duckduckgo.com/?q=' + encodeURIComponent('!lucky site:bedetheque.com ' + title);
     }
     function closeModal(id) { document.getElementById(id).style.display='none'; }
-    document.addEventListener('keydown', e=>{ if(e.key==='Escape') { closeModal('settings-modal'); closeModal('search-modal'); } });
+    document.addEventListener('keydown', e=>{ 
+        if(e.key==='Escape') { 
+            closeModal('settings-modal'); 
+            closeModal('search-modal'); 
+            closeModal('downloads-modal'); 
+            closeModal('image-modal'); 
+        } 
+    });
+
+    function openImagePreview(src, title) {
+        if (!src) return;
+        const modal = document.getElementById('image-modal');
+        const img = document.getElementById('image-modal-img');
+        const titleEl = document.getElementById('image-modal-title');
+        img.src = src;
+        titleEl.textContent = title || '';
+        modal.style.display = 'flex';
+    }
 
     /* Scanner Dynamique */
     
@@ -806,11 +1072,12 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
     }
 
     function addToRead(msg_id, status, filename, channel) {
-        
         const btn = document.getElementById('btn-read-' + msg_id);
+        const bRead = document.getElementById('badge-read-' + msg_id);
         
         if (toReadList.has(filename)) {
             if(btn) { btn.classList.remove('pinned'); btn.title = 'Ajouter à la pile à lire'; btn.style.transform = 'scale(0.8)'; setTimeout(()=>btn.style.transform='none',200); }
+            if(bRead) { bRead.style.display = 'none'; }
             toReadList.delete(filename);
             fetch('/api/remove_to_read', {
                 method: 'POST',
@@ -832,6 +1099,14 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 const fullLocalPath = localPath.endsWith("\\") ? localPath + localName : localPath + "\\" + localName;
                 
                 if(btn) { btn.classList.add('pinned'); btn.title = 'Retirer de la pile à lire'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
+                if(bRead) { 
+                    bRead.className = 'badge'; 
+                    bRead.style.cssText = 'background:#78350f; color:#fde68a; border:1px solid #f59e0b80; cursor:pointer;'; 
+                    bRead.innerText = '📚 Pile à lire'; 
+                    bRead.title = 'Retirer de la pile à lire'; 
+                    bRead.style.display = 'inline-block'; 
+                    bRead.onclick = (e) => { e.stopPropagation(); addToRead(msg_id, status, filename, channel); };
+                }
                 toReadList.add(filename);
                 
                 fetch('/api/add_to_read_local', {
@@ -846,6 +1121,14 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             }
         } else {
             if(btn) { btn.classList.add('pinned'); btn.title = 'Retirer de la pile à lire'; btn.style.transform = 'scale(1.2)'; setTimeout(()=>btn.style.transform='none',200); }
+            if(bRead) { 
+                bRead.className = 'badge'; 
+                bRead.style.cssText = 'background:#78350f; color:#fde68a; border:1px solid #f59e0b80; cursor:pointer;'; 
+                bRead.innerText = '📚 Pile à lire'; 
+                bRead.title = 'Retirer de la pile à lire'; 
+                bRead.style.display = 'inline-block'; 
+                bRead.onclick = (e) => { e.stopPropagation(); addToRead(msg_id, status, filename, channel); };
+            }
             toReadList.add(filename);
             
             const qItem = downloadQueue.find(q => q.message_id === msg_id);
@@ -922,10 +1205,11 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 if (!items || items.length === 0) { pGrid.innerHTML = "<h2 style='grid-column: 1 / -1; color: white;'>La pile à lire est vide.</h2>"; return; }
                 pGrid.innerHTML = items.map(d => {
                     const cleanName = d.filename.replace(/_/g,' ').replace(/\.(cbz|cbr|pdf)$/i,'');
-                    const imgH = `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
+                    const safeClean = cleanName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    const imgH = `<img class="cover" src="${d.thumb_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" onclick="openImagePreview('${d.thumb_url}', '${safeClean}')"><div class="cover" style="display:none;align-items:center;justify-content:center;color:#475569;font-size:3rem;background:#0f172a">${d.filename[0].toUpperCase()}</div>`;
                     const extMatch = d.filename.match(/\.([a-z0-9]+)$/i);
                     const ext = extMatch ? extMatch[1].toUpperCase() : '';
-                    return `<div class="card" style="cursor:default;">${imgH}<div class="pin-link pinned" onclick="removeFromRead('${d.filename.replace(/'/g, "\'")}')" title="Retirer de la pile à lire">📌</div><div class="card-info" style="margin-top:auto;"><div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div></div></div>`;
+                    return `<div class="card">${imgH}<div class="pin-link pinned" onclick="event.stopPropagation(); removeFromRead('${d.filename.replace(/'/g, "\\'")}')" title="Retirer de la pile à lire">📌</div><div class="card-info" style="margin-top:auto;"><div class="card-title">${cleanName} <span style="font-size:9px; background:#334155; padding:2px 4px; border-radius:4px; vertical-align:middle; color:#e2e8f0; font-weight:normal;">${ext}</span></div></div></div>`;
                 }).join('');
             });
         }
@@ -1103,6 +1387,9 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         
         let wsUrl = `ws://${window.location.host}/api/scan_stream`;
         const params = [];
+        if (activeChannelId) {
+            params.push(`channel_id=${activeChannelId}`);
+        }
         if (searchQuery) {
             params.push(`search_query=${encodeURIComponent(searchQuery)}`);
             if (continueFromLast) {
@@ -1115,11 +1402,7 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 let dateOnly = lastScanDate;
                 if (dateOnly.includes('T')) dateOnly = dateOnly.split('T')[0];
                 else if (dateOnly.includes(' ')) dateOnly = dateOnly.split(' ')[0];
-                const dateInput = document.getElementById('start_date');
-                if (dateInput && dateInput.value !== dateOnly) {
-                    dateInput.value = dateOnly;
-                    updateConfig();
-                }
+                updateDateDisplay(dateOnly);
             }
         }
         if (params.length > 0) wsUrl += "?" + params.join('&');
@@ -1143,14 +1426,25 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 document.getElementById('btn-scan-stop').style.display = 'none';
                 document.getElementById('btn-search-stop').style.display = 'none';
                 
+                if (msg.last_date) {
+                    lastScanDate = msg.last_date;
+                    if (!searchQuery && activeChannelId) {
+                        if (!appConfig.channel_start_dates) appConfig.channel_start_dates = {};
+                        appConfig.channel_start_dates[activeChannelId.toString()] = msg.last_date;
+                        const ch = channelsList.find(c => c.id === activeChannelId);
+                        if (ch) ch.start_date = msg.last_date;
+                        updateDateDisplay(msg.last_date);
+                        renderSettingsChannelsList();
+                    }
+                }
+                
                 if (currentSearchQuery) {
                     document.getElementById('btn-search-next').style.display = 'inline-block';
                 } else if (msg.last_date) {
-                    lastScanDate = msg.last_date;
                     document.getElementById('btn-scan-next').style.display = 'inline-block';
                 }
                 
-                renderGrid(DATA);
+                applyFilters();
                 ws.close();
             } else if (msg.type === "error") {
                 statusDiv.innerText = "❌ ERREUR: " + msg.message;
@@ -1238,17 +1532,19 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
           
         const bdtH = (u => u ? `<a class="bdt-link" href="${u}" target="_blank" onclick="event.stopPropagation()" title="BDthèque">📚</a>` : '')(bdtUrl(d.filename));
         
-        return `<div class="card${isSel?' selected':''}" data-id="${d.message_id}" data-status="${d.status}" onclick="toggleCard(this)">
+        return `<div class="card${isSel?' selected':''}" data-id="${d.message_id}" data-status="${d.status}" onclick="openImagePreview('${d.thumb_url || ''}', '${safeClean}')" title="Cliquer pour voir la couverture en grand">
           ${imgH}
           ${bdtH}
           
+          <div class="checkmark" onclick="event.stopPropagation(); toggleCardSelection(${d.message_id})" title="${isSel ? 'Désélectionner' : 'Sélectionner pour télécharger'}">✓</div>
           <div class="pin-link ${isPinned ? 'pinned' : ''}" id="btn-read-${d.message_id}" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="${isPinned ? 'Retirer de la pile à lire' : 'Ajouter à la pile à lire'}">📌</div>
 
           <div class="card-info">
             <div class="card-title" data-fn="${d.filename}" onmouseenter="showTip(this.dataset.fn)" onmouseleave="hideTip()" style="display:flex; align-items:center;">${titleHtml}</div>
-            <div class="card-meta">${d.channel_name}<br>${d.date.split(' ')[0]} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
-            <div style="display:flex; gap:5px; align-items:center; margin-top:2px;">
+            <div class="card-meta">${d.date.split(' ')[0]} · ${(d.file_size/1024/1024).toFixed(1)} Mo</div>
+            <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-top:2px;">
                 <span class="badge ${d.status}" onclick="event.stopPropagation(); openModal(${d.message_id}, '${safeOriginal}', '${safeClean}', '${safeResults}')" title="Cliquez pour voir/modifier la correspondance">${d.status}</span>
+                ${isPinned ? `<span class="badge" id="badge-read-${d.message_id}" style="background:#78350f; color:#fde68a; border:1px solid #f59e0b80; cursor:pointer;" onclick="event.stopPropagation(); addToRead(${d.message_id}, '${d.status}', '${safeOriginal}', ${d.channel})" title="Retirer de la pile à lire">📚 Pile à lire</span>` : `<span id="badge-read-${d.message_id}" style="display:none;"></span>`}
                 ${inQueue ? '<span class="badge" style="background:#064e3b; color:#10b981; border:1px solid #10b98140; cursor:default;">🛒 À télécharger</span>' : ''}
             </div>
             <div class="progress-container" id="dl-container-${d.message_id}">
@@ -1256,7 +1552,6 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             </div>
             <div class="dl-status" id="dl-status-${d.message_id}"></div>
           </div>
-          <div class="checkmark">✓</div>
         </div>`;
       }).join('');
       
@@ -1288,6 +1583,8 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
                 if (!isNaN(id)) {
                     selected.add(id);
                     el.classList.add('selected');
+                    const chk = el.querySelector('.checkmark');
+                    if (chk) chk.title = 'Désélectionner';
                 }
             }
         });
@@ -1299,12 +1596,14 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
         renderGrid(DATA);
     }
     
-    function toggleCard(el) {
-        if (!el.dataset.id) return;
-        const id = parseInt(el.dataset.id);
+    function toggleCardSelection(id) {
+        if (!id) return;
+        const card = document.querySelector(`.card[data-id="${id}"]`);
+        const chk = card ? card.querySelector('.checkmark') : null;
         if (selected.has(id)) {
             selected.delete(id);
-            el.classList.remove('selected');
+            if (card) card.classList.remove('selected');
+            if (chk) chk.title = 'Sélectionner pour télécharger';
             const item = DATA.find(d => d.message_id === id);
             if (item && toReadList.has(item.filename) && !downloadQueue.some(q => q.message_id === id)) {
                 toReadList.delete(item.filename);
@@ -1313,9 +1612,15 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
             }
         } else {
             selected.add(id);
-            el.classList.add('selected');
+            if (card) card.classList.add('selected');
+            if (chk) chk.title = 'Désélectionner';
         }
         updateCounter(DATA.length);
+    }
+    
+    function toggleCard(el) {
+        if (!el || !el.dataset.id) return;
+        toggleCardSelection(parseInt(el.dataset.id));
     }
     function updateCounter(vis) {
       const v = vis!==undefined ? vis : document.querySelectorAll('.card:not([style*="display: none"])').length;
@@ -1541,20 +1846,60 @@ input[type="date"], input[type="text"], input[type="number"] {padding:6px 10px;b
 
 @app.get("/")
 async def get_index():
+    return HTMLResponse(INDEX_HTML)
+
+@app.get("/api/channels_list")
+async def get_channels_list():
     config_path = os.path.join(PROJECT_DIR, "config.json")
-    start_date = ""
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
+    if not os.path.exists(config_path):
+        return {"channels": [], "active_channel": None, "channel_start_dates": {}}
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = json.load(f)
+    
+    channels = config.get("channels", [])
+    active_channel = config.get("active_channel", channels[0] if channels else None)
+    channel_start_dates = config.get("channel_start_dates", {})
+    fallback_start_date = config.get("start_date", "")
+
+    result = []
+    dialogs_map = {}
+    if telegram_client and telegram_client.is_connected():
+        try:
+            dialogs = await telegram_client.get_dialogs()
+            dialogs_map = {d.entity.id: getattr(d.entity, "title", str(d.entity.id)) for d in dialogs}
+        except Exception as e:
+            print("Erreur get_dialogs:", e)
+
+    for ch_id in channels:
+        name = dialogs_map.get(ch_id)
+        if not name:
             try:
-                config = json.load(f)
-                start_date = config.get("start_date", "")
-            except:
+                raw_id = int(str(ch_id).replace("-100", ""))
+                name = dialogs_map.get(raw_id)
+            except Exception:
                 pass
-                
-    html = INDEX_HTML
-    display_date = f"[{start_date.split(' ')[0].split('T')[0]}]" if start_date else ""
-    html = html.replace("Scan Chronologique (Telegram)", f"Scan Chronologique (Telegram) <span id='title-scan-date' style='color:#60a5fa;'>{display_date}</span>")
-    return HTMLResponse(html)
+        if not name and telegram_client and telegram_client.is_connected():
+            try:
+                ent = await telegram_client.get_entity(ch_id)
+                name = getattr(ent, "title", str(ch_id))
+            except Exception:
+                name = f"Canal {ch_id}"
+        if not name:
+            name = f"Canal {ch_id}"
+        
+        start_d = channel_start_dates.get(str(ch_id), fallback_start_date)
+        result.append({
+            "id": ch_id,
+            "name": name,
+            "start_date": start_d,
+            "is_active": (ch_id == active_channel)
+        })
+    
+    return {
+        "channels": result,
+        "active_channel": active_channel,
+        "channel_start_dates": channel_start_dates
+    }
 
 @app.get("/api/config")
 async def get_config():
@@ -1571,7 +1916,12 @@ async def update_config(request: Request):
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
-        config["start_date"] = data.get("start_date", "")
+        if "start_date" in data:
+            config["start_date"] = data.get("start_date", "")
+        if "active_channel" in data:
+            config["active_channel"] = data.get("active_channel")
+        if "channel_start_dates" in data and isinstance(data["channel_start_dates"], dict):
+            config["channel_start_dates"] = data["channel_start_dates"]
         if "filename_filter" in data:
             config["filename_filter"] = data["filename_filter"]
         if "download_concurrency" in data:
@@ -1582,7 +1932,7 @@ async def update_config(request: Request):
             config["fuzzy_threshold_duplicate"] = data["fuzzy_threshold_duplicate"]
         if "fuzzy_threshold_review" in data:
             config["fuzzy_threshold_review"] = data["fuzzy_threshold_review"]
-        if "channels" in data and isinstance(data["channels"], list) and len(data["channels"]) > 0:
+        if "channels" in data and isinstance(data["channels"], list):
             config["channels"] = data["channels"]
         if "bd_search_paths" in data and isinstance(data["bd_search_paths"], list):
             config["bd_search_paths"] = data["bd_search_paths"]
@@ -1718,7 +2068,7 @@ async def wait_thumb(message_id: int):
     raise HTTPException(status_code=404, detail="Thumbnail timeout")
 
 @app.websocket("/api/scan_stream")
-async def scan_stream(websocket: WebSocket, continue_date: str = None, search_query: str = None, skip: int = 0):
+async def scan_stream(websocket: WebSocket, continue_date: str = None, search_query: str = None, skip: int = 0, channel_id: int = None):
     await websocket.accept()
     if not telegram_client:
         await websocket.send_json({"type": "error", "message": "Telegram client non connecté (vérifiez api_id/hash dans config.json)."})
@@ -1730,7 +2080,17 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
         
-    channels = config.get("channels", [])
+    all_channels = config.get("channels", [])
+    active_channel = config.get("active_channel", all_channels[0] if all_channels else None)
+    channel_start_dates = config.get("channel_start_dates", {})
+    
+    if channel_id:
+        target_channels = [channel_id]
+    elif active_channel:
+        target_channels = [active_channel]
+    else:
+        target_channels = all_channels
+
     everything_url = config.get("everything_api_url", "http://localhost:8070")
     threshold_dup = config.get("fuzzy_threshold_duplicate", 85)
     threshold_rev = config.get("fuzzy_threshold_review", 50)
@@ -1741,24 +2101,11 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
     max_cards = config.get("max_gallery_size", config.get("max_downloads_per_run", 50))
     if max_cards == 0:
         max_cards = 9999
-        
-    start_date_str = config.get("start_date", "")
-    start_date_dt = None
-    if start_date_str:
-        from datetime import datetime, timezone
-        try:
-            start_date_dt = datetime.fromisoformat(start_date_str)
-            if start_date_dt.tzinfo is None:
-                start_date_dt = start_date_dt.replace(tzinfo=timezone.utc)
-        except Exception:
-            try:
-                start_date_dt = datetime.strptime(start_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-            except Exception:
-                pass
 
     from telegram_scraper import SUPPORTED_EXTENSIONS, _extract_filename_and_ext
     from everything_checker import search_by_keywords
     from fuzzy_matcher import rank_matches
+    from datetime import datetime, timezone, timedelta
 
     try:
         dialogs = await telegram_client.get_dialogs()
@@ -1768,7 +2115,7 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
         total_scanned = 0
         global_last_date = None
         
-        for channel in channels:
+        for channel in target_channels:
             if total_found >= max_cards:
                 break
                 
@@ -1781,14 +2128,26 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
             
             await websocket.send_json({"type": "info", "message": f"Scan du channel : {channel_name}..."})
             
+            # Calculer la date de départ pour ce canal spécifique
+            ch_start_str = channel_start_dates.get(str(channel), config.get("start_date", ""))
+            start_date_dt = None
+            if ch_start_str:
+                try:
+                    start_date_dt = datetime.fromisoformat(ch_start_str)
+                    if start_date_dt.tzinfo is None:
+                        start_date_dt = start_date_dt.replace(tzinfo=timezone.utc)
+                except Exception:
+                    try:
+                        start_date_dt = datetime.strptime(ch_start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                    except Exception:
+                        pass
+
             skipped_so_far = 0
             if search_query:
                 kwargs = {'search': search_query, 'limit': None}
             else:
                 kwargs = {'reverse': True}
                 if continue_date:
-                    from datetime import datetime
-                    from datetime import timedelta
                     kwargs["offset_date"] = datetime.fromisoformat(continue_date) - timedelta(seconds=2)
                 elif start_date_dt:
                     kwargs['offset_date'] = start_date_dt
@@ -1886,7 +2245,18 @@ async def scan_stream(websocket: WebSocket, continue_date: str = None, search_qu
                     await websocket.send_json(data)
                     total_found += 1
                     
-        await websocket.send_json({"type": "done", "message": f"Terminé ! {total_found} BD trouvées parmi {total_scanned} messages scannés.", "last_date": global_last_date})
+        # Sauvegarde de la progression par canal
+        if global_last_date and target_channels and not search_query:
+            scanned_ch = target_channels[0]
+            if "channel_start_dates" not in config:
+                config["channel_start_dates"] = {}
+            config["channel_start_dates"][str(scanned_ch)] = global_last_date
+            if scanned_ch == active_channel:
+                config["start_date"] = global_last_date
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+
+        await websocket.send_json({"type": "done", "message": f"Terminé ! {total_found} BD trouvées parmi {total_scanned} messages scannés.", "last_date": global_last_date, "channel_id": target_channels[0] if target_channels else None})
         await websocket.close()
         
     except Exception as e:
